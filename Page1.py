@@ -1,33 +1,36 @@
-import streamlit as st
+import streamlit as st  # type: ignore
 
-# Importar vistas
 from inicio import vista_inicio
 from datos import vista_exploracion
 from visualizacion import vista_visualizacion
 from configuracion import vista_configuracion
 
-# Configuración de página
-st.set_page_config(page_title="Mi App Completa", layout="wide")
+# Configuración general
+st.set_page_config(page_title="Data Alchemist", layout="wide")
 
-# Inicializar estado
+# Estado de navegación
 if "seccion_activa" not in st.session_state:
     st.session_state.seccion_activa = "Inicio"
 
-# --- Estilo uniforme para botones ---
-button_css = """
-<style>
-div.stButton > button {
-    width: 100%;
-    margin-bottom: 10px;
-    height: 45px;
-    font-size: 16px;
-}
-</style>
-"""
-st.sidebar.markdown(button_css, unsafe_allow_html=True)
+# === Sidebar ===
 
-# Sidebar con botones uniformes
-st.sidebar.title("Panel de control")
+# Espaciado arriba (mínimo para ajustar imagen)
+st.sidebar.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
+
+# Imagen centrada
+col1, col2, col3 = st.sidebar.columns([25, 100, 25])
+with col2:
+    st.image("Imagenes/DanuAnalitica.png", width=120)
+
+# Espaciado entre logo y menú
+st.sidebar.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+
+# ✅ Cargar estilos CSS externos
+with open("style.css", encoding="utf-8") as f:
+    st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
+# Menú de navegación
+st.sidebar.markdown("### MENÚ")
 
 if st.sidebar.button("Inicio"):
     st.session_state.seccion_activa = "Inicio"
@@ -41,10 +44,10 @@ if st.sidebar.button("Visualización"):
 if st.sidebar.button("Configuración"):
     st.session_state.seccion_activa = "Configuración"
 
-st.sidebar.markdown("---")
-st.sidebar.write("Data Alchemist v1.0")
+# Espacio al fondo de la sidebar para no empalmar branding con menú
+st.sidebar.markdown("<div style='flex-grow: 1; height: 40px;'></div>", unsafe_allow_html=True)
 
-# Enrutamiento según la vista activa
+# === Vista activa ===
 if st.session_state.seccion_activa == "Inicio":
     vista_inicio()
 elif st.session_state.seccion_activa == "Exploración de Datos":

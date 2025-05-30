@@ -1,12 +1,34 @@
-import matplotlib.pyplot as plt
-import streamlit as st
-import pandas as pd
+import matplotlib.pyplot as plt  # type: ignore
+import streamlit as st  # type: ignore
+import pandas as pd  # type: ignore
 from pathlib import Path
 
 def vista_inicio():
-    st.title("Danu Shop")
-    archivo = Path("UPDINTEGRADO.xlsx")
+    # === Estilos personalizados ===
+    st.markdown("""
+        <style>
+        .block-container {
+            padding-top: 3rem !important;
+        }
+        .titulo-principal {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 0.25rem;
+        }
+        .subtitulo {
+            font-size: 20px;
+            font-weight: 500;
+            color: #444;
+            margin-bottom: 2rem;
+        }
+        </style>
+    """, unsafe_allow_html=True)
 
+    # === Encabezado ===
+    st.markdown("<div class='titulo-principal'>Danu Shop</div>", unsafe_allow_html=True)
+    st.markdown("<div class='subtitulo'>Panel de Indicadores Clave y Estratégicos</div>", unsafe_allow_html=True)
+
+    archivo = Path("UPDINTEGRADO.xlsx")
     if archivo.exists():
         try:
             df = pd.read_excel(archivo)
@@ -21,24 +43,40 @@ def vista_inicio():
                 totales = periodos.count()
                 retencion = (retenidos / totales) * 100
 
-                # --- Filtros solo visibles en esta vista ---
-                st.sidebar.markdown("### Filtros de Inicio")
-                cat_sel = st.sidebar.selectbox("Categoría del Producto", df["categoria_nombre_producto"].dropna().unique())
-                estado_sel = st.sidebar.selectbox("Estado del Cliente", df["estado_del_cliente"].dropna().unique())
-                df["volumen"] = pd.to_numeric(df["volumen"], errors="coerce")
-                vol_max = df["volumen"].max()
-                vol_fil = st.sidebar.slider("Filtrar volumen máximo", 0.0, float(vol_max), float(vol_max), step=10.0)
+                # === Filtros ===
+                with st.sidebar.expander("Filtros", expanded=True):
+                    st.markdown("**Seleccione la métrica:**")
+                    metrica_sel = st.radio("", ["Unidades vendidas", "Tiempo de entrega", "Volumen de pedidos"], index=0)
 
-                # --- KPIs ---
-                st.markdown("### Panel de Indicadores Clave y Estratégicos")
+                    df['mes'] = df['orden_compra_timestamp_fecha'].dt.strftime('%B')
+                    meses = sorted(df['mes'].dropna().unique().tolist())
+                    mes_sel = st.selectbox("Selecciona un mes", meses)
+
+                    categorias = sorted(df["categoria_nombre_producto"].dropna().unique().tolist())
+                    cat_sel = st.selectbox("Categoría del Producto", categorias)
+
+                    estados = sorted(df["estado_del_cliente"].dropna().unique().tolist())
+                    estado_sel = st.selectbox("Estado del Cliente", estados)
+
+                    df["volumen"] = pd.to_numeric(df["volumen"], errors="coerce")
+                    vol_max = df["volumen"].max()
+                    vol_fil = st.slider("Filtrar volumen máximo", 0.0, float(vol_max), float(vol_max), step=10.0)
+
+                df_cat = df[df["categoria_nombre_producto"] == cat_sel]
+                df_estado = df[df["estado_del_cliente"] == estado_sel].copy()
+                df_estado["fecha_entrega_al_cliente_fecha"] = pd.to_datetime(df_estado["fecha_entrega_al_cliente_fecha"])
+                df_estado["fecha_de_entrega_estimada_fecha"] = pd.to_datetime(df_estado["fecha_de_entrega_estimada_fecha"])
+                df_estado["retraso_dias"] = (df_estado["fecha_entrega_al_cliente_fecha"] - df_estado["fecha_de_entrega_estimada_fecha"]).dt.days
+                df_vol = df[df["volumen"] <= vol_fil]
+
+                # === KPIs sin recuadro ===
                 col1, col2, col3, col4, col5 = st.columns(5)
 
                 with col1:
                     st.metric("Tasa de Retención", f"{retencion:.2f} %", delta=f"{retencion - 3:.2f} % desde 3%")
 
                 with col2:
-                    dias = df['tiempo_total_entrega_dias'].dropna()
-                    promedio = dias.mean()
+                    promedio = df['tiempo_total_entrega_dias'].dropna().mean()
                     if promedio <= 6:
                         rango = "4-6 días"
                     elif promedio <= 8:
@@ -50,26 +88,20 @@ def vista_inicio():
                     st.metric("Entrega Promedio", rango)
 
                 with col3:
-                    df_cat = df[df["categoria_nombre_producto"] == cat_sel]
                     entregas_prime = df_cat[df_cat["tiempo_total_entrega_dias"] <= 3]
                     perc_prime = (len(entregas_prime) / len(df_cat)) * 100 if len(df_cat) > 0 else 0
                     st.metric("Entregas Prime (≤3 días)", f"{perc_prime:.2f} %")
 
                 with col4:
-                    df_estado = df[df["estado_del_cliente"] == estado_sel].copy()
-                    df_estado["fecha_entrega_al_cliente_fecha"] = pd.to_datetime(df_estado["fecha_entrega_al_cliente_fecha"])
-                    df_estado["fecha_de_entrega_estimada_fecha"] = pd.to_datetime(df_estado["fecha_de_entrega_estimada_fecha"])
-                    df_estado["retraso_dias"] = (df_estado["fecha_entrega_al_cliente_fecha"] - df_estado["fecha_de_entrega_estimada_fecha"]).dt.days
                     retraso_prom = df_estado["retraso_dias"].mean()
                     st.metric("Retraso Promedio", f"{retraso_prom:.2f} días")
 
                 with col5:
-                    df_vol = df[df["volumen"] <= vol_fil]
                     entregas_reg = df_vol[df_vol["tiempo_total_entrega_dias"] > 7]
                     perc_reg = (len(entregas_reg) / len(df_vol)) * 100 if len(df_vol) > 0 else 0
                     st.metric("Entregas Regulares (8+ días)", f"{perc_reg:.2f} %")
 
-                # --- Visualizaciones ---
+                # === Visualizaciones ===
                 colv1, colv2 = st.columns(2)
 
                 with colv1:
@@ -113,6 +145,14 @@ def vista_inicio():
                     ax_d.set_xlim(0, 30)
                     ax_d.grid(True, axis='y')
                     st.pyplot(fig_d)
+
+                # === Branding lateral ===
+                st.sidebar.markdown("""
+                    <hr style='margin-top: 12px; margin-bottom: 4px;'>
+                    <p style='font-size: 11px; text-align: center; margin: 0; color: #444;'>
+                        Todos los derechos reservados<br><strong>DataAlchemist</strong>
+                    </p>
+                """, unsafe_allow_html=True)
 
         except Exception as e:
             st.error(f"Error al leer el archivo: {e}")
