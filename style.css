@@ -1,0 +1,58 @@
+/* === Botones blancos con borde azul y hover azul oscuro === */
+div.stButton > button {
+    width: 100%;
+    height: 36px;
+    font-size: 14px;
+    margin-bottom: 6px;
+    border-radius: 6px;
+    background-color: white;           /* Color por defecto: blanco */
+    color: black;                      /* Texto negro */
+    border: 1px solid #020873;         /* Borde azul oscuro */
+    transition: 0.3s ease;
+}
+
+div.stButton > button:hover {
+    background-color: #020873;         /* Fondo azul al hacer hover */
+    color: black;                      /* ✅ Texto permanece negro */
+    border: 1px solid #020873;
+}
+
+/* === Radio button seleccionado sin fondo, con texto negro === */
+[data-baseweb="radio"] input:checked + div {
+    background-color: transparent !important;
+    color: black !important;
+    font-weight: 500;
+    border: none !important;
+}
+
+/* Punto azul dentro del radio */
+[data-baseweb="radio"] input:checked + div > div:first-child svg {
+    color: #020873 !important;
+}
+
+/* === Texto del valor del slider en gris claro === */
+span[data-testid="stSliderValue"] {
+    color: #d3d3d3 !important;
+    font-weight: bold;
+}
+
+/* === Slider === */
+div[role="slider"] {
+    background-color: #020873 !important;
+    border: 1px solid #020873 !important;
+    box-shadow: none !important;
+}
+
+/* Progreso del slider */
+div[data-testid="stSlider"] > div > div:nth-child(2) > div:nth-child(2) {
+    background-color: #d3d3d3 !important;
+    height: 4px !important;
+    border-radius: 5px;
+}
+
+/* Fondo del slider */
+div[data-testid="stSlider"] > div > div:nth-child(2) > div:nth-child(1) {
+    background-color: #d3d3d3 !important;
+    height: 4px !important;
+    border-radius: 5px;
+}
