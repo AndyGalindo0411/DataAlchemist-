@@ -1,27 +1,63 @@
-import matplotlib.pyplot as plt  # type: ignore
-import streamlit as st  # type: ignore
-import pandas as pd  # type: ignore
+import matplotlib.pyplot as plt # type: ignore
+import streamlit as st # type: ignore
+import pandas as pd # type: ignore
 from pathlib import Path
 
 def vista_inicio():
-    # === Estilos personalizados ===
+    # === Estilos personalizados mejorados ===
     st.markdown("""
-        <style>
-        .block-container {
-            padding-top: 3rem !important;
-        }
-        .titulo-principal {
-            font-size: 36px;
-            font-weight: bold;
-            margin-bottom: 0.25rem;
-        }
-        .subtitulo {
-            font-size: 20px;
-            font-weight: 500;
-            color: #444;
-            margin-bottom: 2rem;
-        }
-        </style>
+    <style>
+    .block-container {
+        padding-top: 3rem !important;
+    }
+    .titulo-principal {
+        font-size: 36px;
+        font-weight: bold;
+        margin-bottom: 0.25rem;
+    }
+    .subtitulo {
+        font-size: 20px;
+        font-weight: 500;
+        color: #444;
+        margin-bottom: 2rem;
+    }
+    .kpi-box {
+        background-color: #f8f9fa;
+        border-radius: 12px;
+        box-shadow: 0px 8px 30px rgba(0, 0, 0, 0.25);
+        padding: 1.5rem 1rem 1rem 1rem;
+        text-align: center;
+        transition: transform 0.2s;
+    }
+    .kpi-box:hover {
+        transform: scale(1.02);
+    }
+    .kpi-title {
+        font-size: 15px;
+        color: #555;
+        margin-bottom: 8px;
+    }
+    .kpi-value {
+        font-size: 30px;
+        font-weight: 800;
+        color: #111;
+    }
+    .kpi-delta {
+        font-size: 14px;
+        font-weight: 500;
+        margin-top: 6px;
+    }
+    .up {
+        color: green;
+    }
+    .down {
+        color: red;
+    }
+    .divider {
+        margin: 2rem 0 1rem 0;
+        border-top: 2px solid #d3d3d3;
+    }
+    </style>
     """, unsafe_allow_html=True)
 
     # === Encabezado ===
@@ -38,111 +74,101 @@ def vista_inicio():
                 df['orden_compra_timestamp_fecha'] = pd.to_datetime(df['orden_compra_timestamp_fecha'])
                 df['periodo'] = df['orden_compra_timestamp_fecha'].dt.to_period('M')
 
-                periodos = df.groupby('id_único_de_cliente')['periodo'].nunique()
-                retenidos = periodos[periodos > 1].count()
-                totales = periodos.count()
-                retencion = (retenidos / totales) * 100
+                df["volumen"] = pd.to_numeric(df["volumen"], errors="coerce")
+                df['mes'] = df['orden_compra_timestamp_fecha'].dt.strftime('%B')
 
-                # === Filtros ===
+                # === Filtros NUEVOS del segundo código ===
                 with st.sidebar.expander("Filtros", expanded=True):
-                    st.markdown("**Seleccione la métrica:**")
-                    metrica_sel = st.radio("", ["Unidades vendidas", "Tiempo de entrega", "Volumen de pedidos"], index=0)
+                    categorias = ['Todos'] + sorted(df['categoria_nombre_producto'].dropna().unique().tolist())
+                    categoria_seleccionada = st.selectbox("Categoría", categorias)
 
-                    df['mes'] = df['orden_compra_timestamp_fecha'].dt.strftime('%B')
-                    meses = sorted(df['mes'].dropna().unique().tolist())
-                    mes_sel = st.selectbox("Selecciona un mes", meses)
+                    tipo_entrega = st.selectbox("Tipo de Entrega", 
+                                                ["De (0-30 días)", 
+                                                "Prime (0–3 días)", 
+                                                "Express (4–7 días)", 
+                                                "Regular (8–30 días)"])
 
-                    categorias = sorted(df["categoria_nombre_producto"].dropna().unique().tolist())
-                    cat_sel = st.selectbox("Categoría del Producto", categorias)
+                # Filtrar por categoría
+                df_filtrado = df if categoria_seleccionada == 'Todos' else df[df['categoria_nombre_producto'] == categoria_seleccionada]
 
-                    estados = sorted(df["estado_del_cliente"].dropna().unique().tolist())
-                    estado_sel = st.selectbox("Estado del Cliente", estados)
+                periodos_cat = df_filtrado.groupby('id_único_de_cliente')['periodo'].nunique()
+                retenidos_cat = periodos_cat[periodos_cat > 1].count()
+                totales_cat = periodos_cat.count()
+                retencion_cat = (retenidos_cat / totales_cat) * 100 if totales_cat > 0 else 0
+                no_retenidos_cat = 100 - retencion_cat
 
-                    df["volumen"] = pd.to_numeric(df["volumen"], errors="coerce")
-                    vol_max = df["volumen"].max()
-                    vol_fil = st.slider("Filtrar volumen máximo", 0.0, float(vol_max), float(vol_max), step=10.0)
+                dias = df['tiempo_total_entrega_dias'].dropna()
+                if tipo_entrega == "Prime (0–3 días)":
+                    dias_filtrados = dias[dias.between(0, 3)]
+                    titulo = "Distribución de Entregas Prime (0–3 días)"
+                    rango = range(0, 4)
+                    titulo_kpi = "Entrega Promedio Prime (días)"
+                elif tipo_entrega == "Express (4–7 días)":
+                    dias_filtrados = dias[dias.between(4, 7)]
+                    titulo = "Distribución de Entregas Express (4–7 días)"
+                    rango = range(4, 8)
+                    titulo_kpi = "Entrega Promedio Express (días)"
+                elif tipo_entrega == "Regular (8–30 días)":
+                    dias_filtrados = dias[dias.between(8, 30)]
+                    titulo = "Distribución de Entregas Regular (8–30 días)"
+                    rango = range(8, 31)
+                    titulo_kpi = "Entrega Promedio Regular (días)"
+                else:
+                    dias_filtrados = dias[dias.between(0, 30)]
+                    titulo = "Distribución de Entregas (0–30 días)"
+                    rango = range(0, 31)
+                    titulo_kpi = "Entrega Promedio (días)"
 
-                df_cat = df[df["categoria_nombre_producto"] == cat_sel]
-                df_estado = df[df["estado_del_cliente"] == estado_sel].copy()
-                df_estado["fecha_entrega_al_cliente_fecha"] = pd.to_datetime(df_estado["fecha_entrega_al_cliente_fecha"])
-                df_estado["fecha_de_entrega_estimada_fecha"] = pd.to_datetime(df_estado["fecha_de_entrega_estimada_fecha"])
-                df_estado["retraso_dias"] = (df_estado["fecha_entrega_al_cliente_fecha"] - df_estado["fecha_de_entrega_estimada_fecha"]).dt.days
-                df_vol = df[df["volumen"] <= vol_fil]
+                promedio_filtrado = round(dias_filtrados.mean()) if not dias_filtrados.empty else 0
 
-                # === KPIs sin recuadro ===
-                col1, col2, col3, col4, col5 = st.columns(5)
+                # === KPIs NUEVOS ===
+                col1, col2 = st.columns(2)
 
                 with col1:
-                    st.metric("Tasa de Retención", f"{retencion:.2f} %", delta=f"{retencion - 3:.2f} % desde 3%")
+                    st.markdown(f"""
+                        <div class="kpi-box">
+                            <div class="kpi-title">Tasa de Retención ({categoria_seleccionada})</div>
+                            <div class="kpi-value">{retencion_cat:.2f} %</div>
+                            <div class="kpi-delta down">⬇ {abs(retencion_cat - 3):.2f}% desde 3%</div>
+                        </div>
+                    """, unsafe_allow_html=True)
 
                 with col2:
-                    promedio = df['tiempo_total_entrega_dias'].dropna().mean()
-                    if promedio <= 6:
-                        rango = "4-6 días"
-                    elif promedio <= 8:
-                        rango = "6-8 días"
-                    elif promedio <= 10:
-                        rango = "8-10 días"
-                    else:
-                        rango = "+10 días"
-                    st.metric("Entrega Promedio", rango)
-
-                with col3:
-                    entregas_prime = df_cat[df_cat["tiempo_total_entrega_dias"] <= 3]
-                    perc_prime = (len(entregas_prime) / len(df_cat)) * 100 if len(df_cat) > 0 else 0
-                    st.metric("Entregas Prime (≤3 días)", f"{perc_prime:.2f} %")
-
-                with col4:
-                    retraso_prom = df_estado["retraso_dias"].mean()
-                    st.metric("Retraso Promedio", f"{retraso_prom:.2f} días")
-
-                with col5:
-                    entregas_reg = df_vol[df_vol["tiempo_total_entrega_dias"] > 7]
-                    perc_reg = (len(entregas_reg) / len(df_vol)) * 100 if len(df_vol) > 0 else 0
-                    st.metric("Entregas Regulares (8+ días)", f"{perc_reg:.2f} %")
+                    st.markdown(f"""
+                        <div class="kpi-box">
+                            <div class="kpi-title">{titulo_kpi}</div>
+                            <div class="kpi-value">{promedio_filtrado} días</div>
+                            <div class="kpi-delta {'up' if promedio_filtrado > 7 else 'down'}">
+                                {'⬆' if promedio_filtrado > 7 else '⬇'} vs ideal ≤ 7
+                            </div>
+                        </div>
+                    """, unsafe_allow_html=True)
 
                 # === Visualizaciones ===
+                st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
+                st.markdown("### Visualizaciones Generales")
                 colv1, colv2 = st.columns(2)
 
                 with colv1:
-                    st.subheader("Entregas Prime por Categoría")
-                    fig1, ax1 = plt.subplots()
-                    df_cat_hist = df_cat["tiempo_total_entrega_dias"]
-                    ax1.hist(df_cat_hist[df_cat_hist <= 10], bins=10, color="#4D4FFF", edgecolor="black")
-                    ax1.set_xlabel("Días de Entrega")
-                    ax1.set_ylabel("Número de Pedidos")
-                    ax1.set_title(f"Categoría: {cat_sel}")
-                    st.pyplot(fig1)
-
                     st.subheader("Clientes Retenidos vs No Retenidos")
                     fig_r, ax_r = plt.subplots()
-                    no_retenidos = 100 - retencion
-                    ax_r.pie([retencion, no_retenidos], labels=["Retenidos", "No Retenidos"],
+                    ax_r.pie([retencion_cat, no_retenidos_cat], 
+                             labels=["Retenidos", "No Retenidos"],
                              autopct='%1.1f%%', colors=["#55d6be", "#329fbd"], startangle=90)
                     ax_r.axis('equal')
                     st.pyplot(fig_r)
 
                 with colv2:
-                    st.subheader("Retraso Promedio por Estado")
-                    fig2, ax2 = plt.subplots()
-                    ax2.hist(df_estado["retraso_dias"].dropna(), bins=10, color="#FF4D4D", edgecolor="black")
-                    ax2.set_xlabel("Días de Retraso")
-                    ax2.set_ylabel("Número de Pedidos")
-                    ax2.set_title(f"Estado: {estado_sel}")
-                    st.pyplot(fig2)
-
-                    st.subheader("Distribución de Entregas (0-30 días)")
-                    dias = df['tiempo_total_entrega_dias'].dropna()
-                    conteo_por_dia = dias.value_counts().sort_index()
-                    rango_completo = pd.Series(index=range(0, 31), dtype=int).fillna(0)
-                    conteo_por_dia = rango_completo.add(conteo_por_dia, fill_value=0).astype(int)
+                    st.subheader(titulo)
+                    conteo_por_dia = dias_filtrados.value_counts().sort_index()
+                    conteo_por_dia = pd.Series(index=rango, dtype=int).fillna(0).add(conteo_por_dia, fill_value=0).astype(int)
 
                     fig_d, ax_d = plt.subplots(figsize=(12, 4))
                     ax_d.bar(conteo_por_dia.index, conteo_por_dia.values, color='#4D4FFF', edgecolor='black')
                     ax_d.set_xlabel("Días de Entrega")
                     ax_d.set_ylabel("Cantidad de Pedidos")
-                    ax_d.set_xticks(range(0, 31, 2))
-                    ax_d.set_xlim(0, 30)
+                    ax_d.set_xticks(rango)
+                    ax_d.set_xlim(min(rango), max(rango))
                     ax_d.grid(True, axis='y')
                     st.pyplot(fig_d)
 
