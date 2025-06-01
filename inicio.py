@@ -8,7 +8,6 @@ import numpy as np  # type: ignore
 import plotly.express as px # type: ignore
 import streamlit as st # type: ignore
 
-
 def mostrar_scatter_entregas_rapidas(df_estado):
     df_estado['volumen'] = pd.to_numeric(df_estado['volumen'], errors='coerce')
     df_estado['tiempo_total_entrega_dias'] = pd.to_numeric(df_estado['tiempo_total_entrega_dias'], errors='coerce')
@@ -25,12 +24,13 @@ def mostrar_scatter_entregas_rapidas(df_estado):
         y="tiempo_total_entrega_dias",
         color="entrega_rapida",
         color_discrete_map={True: "green", False: "red"},
-        labels={"entrega_rapida": "¿Rápida?", "tiempo_total_entrega_dias": "Días de Entrega"},
-        title="Tiempo de Entrega en Pedidos de Alto Volumen"
+        labels={
+            "entrega_rapida": "¿Entrega Rápida?",
+            "tiempo_total_entrega_dias": "Días de Entrega"
+        }
     )
-
-    fig.update_layout(showlegend=True)
-    st.plotly_chart(fig, use_container_width=True)
+    fig.update_traces(marker=dict(size=10, opacity=0.6))
+    return fig  
 
 
 def cargar_datos():
