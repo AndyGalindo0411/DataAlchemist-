@@ -181,12 +181,55 @@ def vista_inicio():
     st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
     st.markdown('<h3 class="visual-title">Visualizaciones Generales</h3>', unsafe_allow_html=True)
 
-    # === Gráfico de dispersión de entregas rápidas ===
-    st.markdown('<div class="visual-card">', unsafe_allow_html=True)
+    # === Gráfico de dispersión de entregas rápidas con sombra ===
     fig_scatter = mostrar_scatter_entregas_rapidas(df_estado)
-    fig_scatter.update_layout(width=350, height=260)
-    st.plotly_chart(fig_scatter, use_container_width=False)
-    st.markdown('</div>', unsafe_allow_html=True)
+
+    fig_scatter.update_layout(
+        title=dict(
+            text="Entregas Rápidas por Volumen",
+            x=0.5,
+            font=dict(size=18, color="black")
+        ),
+        paper_bgcolor='white',
+        plot_bgcolor='white',
+        margin=dict(t=60, b=30, l=30, r=30),
+        width=900,
+        height=400,
+        xaxis_title="Índice / Volumen",
+        yaxis=dict(
+            title=dict(
+                text="Días de Entrega",
+                standoff=30
+            ),
+        ticklabelposition="outside",
+        ticklabelstandoff=-30  # ✅ Separa los números del eje
+        ),
+        hoverlabel=dict(
+            bgcolor="white",
+            font_size=14,
+            font_family="Arial"
+        ),
+        legend=dict(
+            orientation="h",
+            y=-0.2,
+            x=0.8,
+            xanchor="center"
+        )
+    )
+
+    html_scatter = fig_scatter.to_html(full_html=False, include_plotlyjs='cdn')
+
+    components.html(f"""
+        <div style="
+            box-shadow: 0px 12px 30px rgba(0, 0, 0, 0.4);
+            border-radius: 16px;
+            padding: 10px;
+            width: fit-content;
+            margin: auto;
+        ">
+            {html_scatter}
+        </div>
+    """, height=500)
 
     # === Pie Chart + Bar Chart Distribución ===
     col1, col2 = st.columns(2)

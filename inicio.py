@@ -26,11 +26,24 @@ def mostrar_scatter_entregas_rapidas(df_estado):
         color_discrete_map={True: "green", False: "red"},
         labels={
             "entrega_rapida": "¿Entrega Rápida?",
-            "tiempo_total_entrega_dias": "Días de Entrega"
+            "tiempo_total_entrega_dias": "Días de Entrega",
+            "index": "Índice / Volumen"
         }
     )
+
     fig.update_traces(marker=dict(size=10, opacity=0.6))
-    return fig  
+
+    fig.update_layout(
+        yaxis=dict(
+            title=dict(
+                text="Días de Entrega",
+                standoff=30  # ✅ Aplica separación del eje
+            ),
+            tickfont=dict(size=12)
+        )
+    )
+
+    return fig
 
 
 def cargar_datos():
