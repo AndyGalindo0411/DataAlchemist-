@@ -11,7 +11,7 @@ def vista_exploracion():
             elif file.name.endswith('.xlsx'):
                 df = pd.read_excel(file)
             else:
-                st.error("Tipo de archivo no soportado.")
+                st.error("HOLAAAAAAAAAAAAA")
                 return
             st.dataframe(df.head())
             st.success("Archivo cargado correctamente.")

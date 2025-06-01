@@ -306,8 +306,8 @@ def vista_inicio():
         fig_top5.update_traces(
             marker_line=dict(color='black', width=1.5),
             hovertemplate='<b>%{x}</b><br>Ventas: %{y}<extra></extra>',
-            text=top5['Ventas'],  # ✅ mostrar valores arriba
-            textposition="outside"
+            #text=top5['Ventas'],  # ✅ mostrar valores arriba
+            #textposition="outside"
         )
 
         fig_top5.update_layout(
