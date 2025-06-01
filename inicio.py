@@ -7,6 +7,7 @@ from pathlib import Path
 import numpy as np  # type: ignore
 import plotly.express as px # type: ignore
 import streamlit as st # type: ignore
+import plotly.graph_objects as go # type: ignore
 
 def mostrar_scatter_entregas_rapidas(df_estado):
     df_estado['volumen'] = pd.to_numeric(df_estado['volumen'], errors='coerce')
@@ -26,12 +27,62 @@ def mostrar_scatter_entregas_rapidas(df_estado):
         color_discrete_map={True: "green", False: "red"},
         labels={
             "entrega_rapida": "¿Entrega Rápida?",
-            "tiempo_total_entrega_dias": "Días de Entrega"
+            "tiempo_total_entrega_dias": "Días de Entrega",
+            "index": "Índice / Volumen"
         }
     )
-    fig.update_traces(marker=dict(size=10, opacity=0.6))
-    return fig  
 
+    fig.update_traces(marker=dict(size=10, opacity=0.6))
+
+    fig.update_layout(
+        yaxis=dict(
+            title=dict(
+                text="Días de Entrega",
+                standoff=30  # ✅ Aplica separación del eje
+            ),
+            tickfont=dict(size=12)
+        )
+    )
+
+    return fig
+
+def mostrar_linea_distribucion_entregas(dias_filtrados, rango):
+
+    conteo_por_dia = dias_filtrados.value_counts().sort_index()
+    conteo_por_dia = pd.Series(index=rango, dtype=int).fillna(0).add(conteo_por_dia, fill_value=0).astype(int)
+
+    fig = go.Figure()
+
+    fig.add_trace(go.Scatter(
+        x=conteo_por_dia.index,
+        y=conteo_por_dia.values,
+        mode="lines+markers",
+        line=dict(color="royalblue", width=3),
+        fill='tozeroy',
+        marker=dict(size=6),
+        hovertemplate="Día %{x}<br>Cantidad: %{y}<extra></extra>"
+    ))
+
+    fig.update_layout(
+    height=280,  # ⬅️ más bajo
+    width=500,   # ⬅️ más estrecho
+    margin=dict(t=30, b=40, l=40, r=20),
+    template="simple_white",
+    xaxis=dict(
+        title="Días de Entrega",
+        tickfont=dict(size=11, color="black")
+    ),
+    yaxis=dict(
+        title="Cantidad de Entregas",
+        tickfont=dict(size=11, color="black")
+    ),
+    hoverlabel=dict(
+        bgcolor="white",
+        font_size=12,
+        font_family="Arial"
+    )
+)
+    return fig  # ✅ Muy importante
 
 def cargar_datos():
     archivo = Path("UPDINTEGRADO.xlsx")
