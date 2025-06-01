@@ -181,57 +181,6 @@ def vista_inicio():
     # === Visualizaciones Estilizadas ===
     st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
     st.markdown('<h3 class="visual-title">Visualizaciones Generales</h3>', unsafe_allow_html=True)
-
-    # === Gráfico de dispersión de entregas rápidas con sombra ===
-    fig_scatter = mostrar_scatter_entregas_rapidas(df_estado)
-
-    fig_scatter.update_layout(
-        title=dict(
-            text="Entregas Rápidas por Volumen",
-            x=0.5,
-            font=dict(size=18, color="black")
-        ),
-        paper_bgcolor='white',
-        plot_bgcolor='white',
-        margin=dict(t=60, b=30, l=30, r=30),
-        width=900,
-        height=400,
-        xaxis_title="Índice / Volumen",
-        yaxis=dict(
-            title=dict(
-                text="Días de Entrega",
-                standoff=30
-            ),
-        ticklabelposition="outside",
-        ticklabelstandoff=-30  # ✅ Separa los números del eje
-        ),
-        hoverlabel=dict(
-            bgcolor="white",
-            font_size=14,
-            font_family="Arial"
-        ),
-        legend=dict(
-            orientation="h",
-            y=-0.2,
-            x=0.8,
-            xanchor="center"
-        )
-    )
-
-    html_scatter = fig_scatter.to_html(full_html=False, include_plotlyjs='cdn')
-
-    components.html(f"""
-        <div style="
-            box-shadow: 0px 12px 30px rgba(0, 0, 0, 0.4);
-            border-radius: 16px;
-            padding: 10px;
-            width: fit-content;
-            margin: auto;
-        ">
-            {html_scatter}
-        </div>
-    """, height=500)
-
     # === Pie Chart + Bar Chart Distribución ===
     col1, col2 = st.columns(2)
 
@@ -242,24 +191,24 @@ def vista_inicio():
         })
 
         fig_ret = px.pie(
-            df_retencion, 
-            values='Porcentaje', 
+            df_retencion,
+            values='Porcentaje',
             names='Tipo de Cliente',
             color_discrete_map={"Retenidos": "#020873", "No Retenidos": "#9999aa"}
         )
 
         fig_ret.update_traces(
             marker=dict(colors=["#9999aa", "#020873"]),
-            textinfo="none",  # Oculta el % dentro del gráfico
-            hoverinfo="label+percent"  # Solo se ve en hover
+            textinfo="none",
+            hoverinfo="label+percent"
         )
 
         fig_ret.update_layout(
             title=dict(
                 text="Clientes Retenidos vs No Retenidos",
-                x=0.1,
+                x=0.5,
                 font=dict(size=18, color="black")
-           ),
+            ),
             paper_bgcolor='white',
             plot_bgcolor='white',
             legend=dict(orientation="h", y=-0.1, x=0.5, xanchor="center"),
@@ -271,116 +220,141 @@ def vista_inicio():
                 font_family="Arial"
             )
         )
-        html = fig_ret.to_html(full_html=False, include_plotlyjs='cdn')
 
-        # Contenedor con sombra alrededor del gráfico
+        html_pie = fig_ret.to_html(full_html=False, include_plotlyjs='cdn')
+        components.html(f"""
+            <div style="box-shadow: 0px 12px 30px rgba(0, 0, 0, 0.4); border-radius: 16px; padding: 10px; width: fit-content; margin: auto; background-color: white;">
+                {html_pie}
+            </div>
+        """, height=450)
+
+    with col2:
+        fig_linea = mostrar_linea_distribucion_entregas(kpis["dias_filtrados"], kpis["rango"])
+        html_linea = fig_linea.to_html(full_html=False, include_plotlyjs='cdn')
+
         components.html(f"""
             <div style="
                 box-shadow: 0px 12px 30px rgba(0, 0, 0, 0.4);
                 border-radius: 16px;
-                padding: 10px;
+                padding: 10px 10px 20px 10px;  /* aumentamos padding abajo */
                 width: fit-content;
                 margin: auto;
+                background-color: white;
             ">
-                {html}
+                <div style="
+                    font-size: 18px;
+                    font-weight: 600;
+                    text-align: center;
+                    color: black;
+                    margin-bottom: 10px;
+                    font-family: Arial, sans-serif;
+                ">
+                    Distribución de Entregas
+                </div>
+                {html_linea}
             </div>
-        """, height=450)
-        #st.plotly_chart(fig_ret, use_container_width=False)
-        st.markdown('</div>', unsafe_allow_html=True)
+        """, height=400)  # ⬅️ Aumenta altura para mostrar eje X
 
-    with col2:
-        fig_linea = mostrar_linea_distribucion_entregas(kpis["dias_filtrados"], kpis["rango"])
 
-        html_linea = fig_linea.to_html(full_html=False, include_plotlyjs='cdn')
+    # =======================
+    # SEGUNDA FILA: Heatmap + Top 5
+    # =======================
+    col3, col4 = st.columns(2)
 
+    with col3:
+        fig_heatmap = mostrar_scatter_entregas_rapidas(df_estado)
+
+        fig_heatmap.update_layout(
+            title=dict(
+                text="Mapa de Calor: Entregas Rápidas por Volumen",
+                x=0.5,
+                font=dict(size=18, color="black")
+            ),
+            paper_bgcolor='white',
+            plot_bgcolor='white',
+            hoverlabel=dict(
+                bgcolor="white",
+                font_size=14,
+                font_family="Arial"
+            )
+        )
+
+        html_heatmap = fig_heatmap.to_html(full_html=False, include_plotlyjs='cdn')
         components.html(f"""
-    <div style="
-        box-shadow: 0px 12px 30px rgba(0, 0, 0, 0.4);
-        border-radius: 16px;
-        padding: 10px;
-        width: fit-content;
-        margin: auto;
-        background-color: white;
-    ">
-        <div style="
-            font-size: 18px;
-            font-weight: 600;
-            text-align: center;
-            color: black;
-            margin-bottom: 10px;
-            font-family: Arial, sans-serif;
-        ">
-            Distribución de Entregas
-        </div>
-        {html_linea}
-    </div>
-""", height=350)
-
-        # === Bar Chart – Top Categorías ===
-    top5 = df_estado['categoria_nombre_producto'].value_counts().head(5).reset_index()
-    top5.columns = ['Categoría', 'Ventas']
-
-    fig_top5 = px.bar(
-    top5,
-    x='Categoría',
-    y='Ventas',
-    color='Categoría',
-    color_discrete_sequence=[
-        "#040959",  # color para categoría 1
-        "#040959",  # color para categoría 2
-        "#040959",  # color para categoría 3
-        "#040959",  # color para categoría 4
-        "#040959"   # color para categoría 5
-    ]
-)
-
-    fig_top5.update_traces(
-    marker_line=dict(color='black', width=1.5),
-    hovertemplate='<b>%{x}</b><br>Ventas: %{y}<extra></extra>',
-    #textfont=dict(family="Arial", size=14, color="black")  # <-- texto más limpio y legible
-)
-
-    fig_top5.update_layout(
-    title=None,
-    xaxis_title="Categoría",
-    yaxis_title="Ventas",
-    paper_bgcolor='white',
-    plot_bgcolor='white',
-    showlegend=False,
-    margin=dict(t=40, b=60, l=60, r=20),  # <-- más espacio para etiquetas
-    height=350,
-    width=800,
-    #font=dict(family="Arial, sans-serif", size=14, color="black"),
-    hoverlabel=dict(
-        bgcolor="white",
-        font_size=14,
-        font_family="Arial"
-    )
-)
-
-    html_top5 = fig_top5.to_html(full_html=False, include_plotlyjs='cdn')
-
-    components.html(f"""
         <div style="
             box-shadow: 0px 12px 30px rgba(0, 0, 0, 0.4);
             border-radius: 16px;
             padding: 10px;
-            width: fit-content;
-            margin: auto;
             background-color: white;
         ">
-                    <div style="
-    font-size: 18px;
-    font-weight: 600;
-    text-align: center;
-    color: black;
-    margin-bottom: 10px;
-    font-family: Arial, sans-serif;
-">
-    Top Categorías en {estado_seleccionado}
-</div>
-
-            {html_top5}
+            {html_heatmap}
         </div>
     """, height=500)
+        
+    with col4:
+        top5 = df_estado['categoria_nombre_producto'].value_counts().head(5).reset_index()
+        top5.columns = ['Categoría', 'Ventas']
 
+        fig_top5 = px.bar(
+            top5,
+            x='Categoría',
+            y='Ventas',
+            color='Categoría',
+            color_discrete_sequence=["#040959"] * 5
+        )
+
+        fig_top5.update_traces(
+            marker_line=dict(color='black', width=1.5),
+            hovertemplate='<b>%{x}</b><br>Ventas: %{y}<extra></extra>',
+            text=top5['Ventas'],  # ✅ mostrar valores arriba
+            textposition="outside"
+        )
+
+        fig_top5.update_layout(
+            title=None,
+            xaxis_title="Categoría",
+            yaxis_title="Ventas",
+            paper_bgcolor='white',
+            plot_bgcolor='white',
+            showlegend=False,
+            height=420,
+            width=500,  # ✅ más ancho
+            margin=dict(t=40, b=120, l=60, r=20),
+            xaxis=dict(
+                tickangle=-20,
+                tickfont=dict(size=11),
+                automargin=True,
+            ),
+            yaxis=dict(
+                tickfont=dict(size=12)
+            ),
+            hoverlabel=dict(
+                bgcolor="white",
+                font_size=13,
+                font_family="Arial"
+            )
+        )
+
+        html_top5 = fig_top5.to_html(full_html=False, include_plotlyjs='cdn')
+        components.html(f"""
+        <div style="
+            box-shadow: 0px 12px 30px rgba(0, 0, 0, 0.4);
+            border-radius: 16px;
+            padding: 10px;
+            background-color: white;
+            width: fit-content;
+            margin: auto;
+        ">
+            <div style="
+                font-size: 18px;
+                font-weight: 600;
+                text-align: center;
+                color: black;
+                margin-bottom: 10px;
+                font-family: Arial, sans-serif;
+            ">
+                Top Categorías en {estado_seleccionado}
+            </div>
+            {html_top5}
+        </div>
+        """, height=490)
