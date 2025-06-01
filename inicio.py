@@ -10,41 +10,73 @@ import streamlit as st # type: ignore
 import plotly.graph_objects as go # type: ignore
 
 def mostrar_scatter_entregas_rapidas(df_estado):
+    # === Limpieza ===
     df_estado['volumen'] = pd.to_numeric(df_estado['volumen'], errors='coerce')
     df_estado['tiempo_total_entrega_dias'] = pd.to_numeric(df_estado['tiempo_total_entrega_dias'], errors='coerce')
+    df_estado = df_estado.dropna(subset=["volumen", "tiempo_total_entrega_dias"])
 
+    # === Filtro ≤ 30 días ===
+    df_estado = df_estado[df_estado['tiempo_total_entrega_dias'] <= 30]
+
+    # === Solo pedidos de alto volumen ===
     umbral_volumen = df_estado['volumen'].quantile(0.75)
     alto_volumen = df_estado[df_estado['volumen'] > umbral_volumen]
 
-    alto_volumen = alto_volumen.dropna(subset=["tiempo_total_entrega_dias"])
-    alto_volumen["entrega_rapida"] = alto_volumen["tiempo_total_entrega_dias"] <= 7
+    # === Bins personalizados (más claros) ===
+    alto_volumen['volumen_bin'] = pd.cut(alto_volumen['volumen'], bins=6)
+    alto_volumen['dias_bin'] = pd.cut(alto_volumen['tiempo_total_entrega_dias'], bins=6, right=True)
 
-    fig = px.scatter(
-        alto_volumen.reset_index(),
-        x=alto_volumen.reset_index().index,
-        y="tiempo_total_entrega_dias",
-        color="entrega_rapida",
-        color_discrete_map={True: "green", False: "red"},
-        labels={
-            "entrega_rapida": "¿Entrega Rápida?",
-            "tiempo_total_entrega_dias": "Días de Entrega",
-            "index": "Índice / Volumen"
-        }
-    )
+    # === Etiquetas legibles ===
+    alto_volumen['volumen_str'] = alto_volumen['volumen_bin'].apply(lambda x: f"{int(x.left):,} – {int(x.right):,}")
+    alto_volumen['dias_str'] = alto_volumen['dias_bin'].apply(lambda x: f"{int(x.left)} – {int(x.right)} días")
 
-    fig.update_traces(marker=dict(size=10, opacity=0.6))
+    # === Agrupación ===
+    heatmap_df = alto_volumen.groupby(['volumen_str', 'dias_str']).size().reset_index(name='conteo')
+    pivot_table = heatmap_df.pivot(index='volumen_str', columns='dias_str', values='conteo').fillna(0)
+
+    # === Heatmap con color personalizado azul ===
+    fig = go.Figure(data=go.Heatmap(
+        z=pivot_table.values,
+        x=list(pivot_table.columns),
+        y=list(pivot_table.index),
+        colorscale=[
+            [0.0, "#8287DB"],
+            [0.25, "#6468B3"],
+            [0.5, "#424688"],
+            [0.75, "#020873"],
+            [1.0, '#010440']
+        ],
+        colorbar=dict(title='Cantidad de Pedidos'),
+        hovertemplate=
+            'Volumen: %{y}<br>' +
+            'Días de Entrega: %{x}<br>' +
+            'Cantidad: %{z}<extra></extra>'
+    ))
 
     fig.update_layout(
+        title="Mapa de Calor: Entregas ≤ 30 días en Alto Volumen",
+        xaxis=dict(
+            title="Días de Entrega (0–30 días)",
+            tickfont=dict(size=11, color="black"),
+            showticklabels=False,  # 👈 Oculta etiquetas X
+            showgrid=False,
+            zeroline=False
+        ),
         yaxis=dict(
-            title=dict(
-                text="Días de Entrega",
-                standoff=30  # ✅ Aplica separación del eje
-            ),
-            tickfont=dict(size=12)
-        )
+            title="Volumen del Pedido (rangos)",
+            tickfont=dict(size=11, color="black"),
+            showticklabels=False,  # 👈 Oculta etiquetas Y
+            showgrid=False,
+            zeroline=False
+        ),
+        height=450,
+        margin=dict(t=60, b=60, l=80, r=40),
+        plot_bgcolor='white',
+        paper_bgcolor='white'
     )
 
     return fig
+
 
 def mostrar_linea_distribucion_entregas(dias_filtrados, rango):
 
@@ -57,7 +89,7 @@ def mostrar_linea_distribucion_entregas(dias_filtrados, rango):
         x=conteo_por_dia.index,
         y=conteo_por_dia.values,
         mode="lines+markers",
-        line=dict(color="royalblue", width=3),
+        line=dict(color="#040959", width=3),
         fill='tozeroy',
         marker=dict(size=6),
         hovertemplate="Día %{x}<br>Cantidad: %{y}<extra></extra>"
