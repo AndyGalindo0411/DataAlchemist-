@@ -7,6 +7,7 @@ import plotly.graph_objects as go  # type: ignore
 import streamlit.components.v1 as components  # type: ignore
 
 from inicio import cargar_datos, aplicar_filtros, calcular_kpis, mostrar_scatter_entregas_rapidas
+from inicio import mostrar_linea_distribucion_entregas
 
 def vista_inicio():
     # === Estilos personalizados mejorados ===
@@ -287,45 +288,99 @@ def vista_inicio():
         #st.plotly_chart(fig_ret, use_container_width=False)
         st.markdown('</div>', unsafe_allow_html=True)
 
-
     with col2:
-        st.markdown('<div class="visual-card">', unsafe_allow_html=True)
-        st.markdown('<h4 class="visual-title">Distribución de Entregas</h4>', unsafe_allow_html=True)
+        fig_linea = mostrar_linea_distribucion_entregas(kpis["dias_filtrados"], kpis["rango"])
 
-        conteo_por_dia = kpis['dias_filtrados'].value_counts().sort_index()
-        conteo_por_dia = pd.Series(index=kpis['rango'], dtype=int).fillna(0).add(conteo_por_dia, fill_value=0).astype(int)
+        html_linea = fig_linea.to_html(full_html=False, include_plotlyjs='cdn')
 
-        fig_dist = go.Figure(data=[
-            go.Bar(
-                x=conteo_por_dia.index,
-                y=conteo_por_dia.values,
-                marker_color='#4D4FFF'
-            )
-        ])
-        fig_dist.update_layout(
-            margin=dict(t=10, b=10, l=20, r=10),
-            width=350, height=260
-        )
-        st.plotly_chart(fig_dist, use_container_width=False)
-        st.markdown('</div>', unsafe_allow_html=True)
+        components.html(f"""
+    <div style="
+        box-shadow: 0px 12px 30px rgba(0, 0, 0, 0.4);
+        border-radius: 16px;
+        padding: 10px;
+        width: fit-content;
+        margin: auto;
+        background-color: white;
+    ">
+        <div style="
+            font-size: 18px;
+            font-weight: 600;
+            text-align: center;
+            color: black;
+            margin-bottom: 10px;
+            font-family: Arial, sans-serif;
+        ">
+            Distribución de Entregas
+        </div>
+        {html_linea}
+    </div>
+""", height=350)
 
-    # === Bar Chart – Top Categorías ===
-    st.markdown('<div class="visual-card">', unsafe_allow_html=True)
-    st.markdown(f'<h4 class="visual-title">Top Categorías en {estado_seleccionado}</h4>', unsafe_allow_html=True)
-
+        # === Bar Chart – Top Categorías ===
     top5 = df_estado['categoria_nombre_producto'].value_counts().head(5).reset_index()
     top5.columns = ['Categoría', 'Ventas']
-    fig_top5 = px.bar(top5, x='Categoría', y='Ventas', text='Ventas')
-    fig_top5.update_layout(
-        margin=dict(t=10, b=10, l=20, r=10),
-        width=600, height=260
-    )
-    st.plotly_chart(fig_top5, use_container_width=False)
-    st.markdown('</div>', unsafe_allow_html=True)
 
-    st.sidebar.markdown("""
-        <hr style='margin-top:12px;margin-bottom:4px;'>
-        <p style='font-size:11px;text-align:center;margin:0;color:#444;'>
-            Todos los derechos reservados<br><strong>DataAlchemist</strong>
-        </p>
-    """, unsafe_allow_html=True)
+    fig_top5 = px.bar(
+    top5,
+    x='Categoría',
+    y='Ventas',
+    color='Categoría',
+    color_discrete_sequence=[
+        "#040959",  # color para categoría 1
+        "#040959",  # color para categoría 2
+        "#040959",  # color para categoría 3
+        "#040959",  # color para categoría 4
+        "#040959"   # color para categoría 5
+    ]
+)
+
+    fig_top5.update_traces(
+    marker_line=dict(color='black', width=1.5),
+    hovertemplate='<b>%{x}</b><br>Ventas: %{y}<extra></extra>',
+    #textfont=dict(family="Arial", size=14, color="black")  # <-- texto más limpio y legible
+)
+
+    fig_top5.update_layout(
+    title=None,
+    xaxis_title="Categoría",
+    yaxis_title="Ventas",
+    paper_bgcolor='white',
+    plot_bgcolor='white',
+    showlegend=False,
+    margin=dict(t=40, b=60, l=60, r=20),  # <-- más espacio para etiquetas
+    height=350,
+    width=800,
+    #font=dict(family="Arial, sans-serif", size=14, color="black"),
+    hoverlabel=dict(
+        bgcolor="white",
+        font_size=14,
+        font_family="Arial"
+    )
+)
+
+    html_top5 = fig_top5.to_html(full_html=False, include_plotlyjs='cdn')
+
+    components.html(f"""
+        <div style="
+            box-shadow: 0px 12px 30px rgba(0, 0, 0, 0.4);
+            border-radius: 16px;
+            padding: 10px;
+            width: fit-content;
+            margin: auto;
+            background-color: white;
+        ">
+                    <div style="
+    font-size: 18px;
+    font-weight: 600;
+    text-align: center;
+    color: black;
+    margin-bottom: 10px;
+    font-family: Arial, sans-serif;
+">
+    Top Categorías en {estado_seleccionado}
+</div>
+
+            {html_top5}
+        </div>
+    """, height=500)
+
