@@ -9,6 +9,7 @@ import streamlit.components.v1 as components  # type: ignore
 from inicio import cargar_datos, aplicar_filtros, calcular_kpis, mostrar_scatter_entregas_rapidas
 from inicio import mostrar_linea_distribucion_entregas
 
+
 def vista_inicio():
     # === Estilos personalizados mejorados ===
     st.markdown("""
@@ -81,29 +82,6 @@ def vista_inicio():
         margin: 2.5rem 0 1.5rem 0;
         border-top: 2px solid #d3d3d3;
     }
-    .hover-card {
-        background-color: red;
-        width: 500px;
-        height: 350px;
-        border-radius: 16px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        transition: box-shadow 0.3s ease, transform 0.3s ease;
-    }
-
-    .hover-card:hover {
-        box-shadow: 0px 12px 30px rgba(0, 0, 0, 0.4);
-        transform: scale(1.02);
-    }            
-    .visual-title {
-        text-align: center;
-        font-size: 20px;
-        font-weight: bold;
-        color: #333;
-        margin-bottom: 1rem;
-    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -134,27 +112,14 @@ def vista_inicio():
     df_filtrado, df_estado = aplicar_filtros(df, categoria_seleccionada, estado_seleccionado)
     kpis = calcular_kpis(df, df_filtrado, df_estado, tipo_entrega, categoria_seleccionada, estado_seleccionado)
 
-    kpi_html = ""
-    if kpis["ahorro_express"] is not None and kpis["ahorro_prime"] is not None:
-        kpi_html += f"""
-        <div class='kpi-box'>
-            <div class='kpi-title'>Ahorro vs Regular (Express)</div>
-            <div class='kpi-value'>{kpis['ahorro_express']:.2f}%</div>
-            <div class='kpi-delta up'>Entrega Express tiene menor costo</div>
-        </div>
-        <div class='kpi-box'>
-            <div class='kpi-title'>Ahorro vs Regular (Prime)</div>
-            <div class='kpi-value'>{kpis['ahorro_prime']:.2f}%</div>
-            <div class='kpi-delta up'>Entrega Prime tiene menor costo</div>
-        </div>
-        """
-
     st.markdown(f"""
     <div class='kpi-container'>
         <div class='kpi-box'>
-            <div class='kpi-title'>% Entregas Rápidas en Alto Volumen</div>
-            <div class='kpi-value'>{kpis['porcentaje_rapidas']:.2f} %</div>
-            <div class='kpi-delta up'>Volumen > p75 entregado en ≤ 7 días</div>
+            <div class='kpi-title'>{kpis['titulo_kpi']}</div>
+            <div class='kpi-value'>{kpis['promedio_filtrado']}</div>
+            <div class='kpi-delta {"up" if kpis['promedio_filtrado'] < 7 else "down"}'>
+                {"Ideal < 7 días" if kpis['promedio_filtrado'] < 7 else "Excede lo ideal (> 7 días)"}
+            </div>
         </div>
         <div class='kpi-box'>
             <div class='kpi-title'>Tasa de Retención ({categoria_seleccionada})</div>
@@ -164,11 +129,9 @@ def vista_inicio():
             </div>
         </div>
         <div class='kpi-box'>
-            <div class='kpi-title'>{kpis['titulo_kpi']}</div>
-            <div class='kpi-value'>{kpis['promedio_filtrado']}</div>
-            <div class='kpi-delta {"up" if kpis['promedio_filtrado'] < 7 else "down"}'>
-                {"Ideal < 7 días" if kpis['promedio_filtrado'] < 7 else "Excede lo ideal (> 7 días)"}
-            </div>
+            <div class='kpi-title'>% Entregas Rápidas en Alto Volumen</div>
+            <div class='kpi-value'>{kpis['porcentaje_rapidas']:.2f} %</div>
+            <div class='kpi-delta up'>Volumen > p75 entregado en ≤ 7 días</div>
         </div>
         <div class='kpi-box'>
             <div class='kpi-title'>Top Categoría en {estado_seleccionado}</div>
@@ -176,8 +139,8 @@ def vista_inicio():
             <div class='kpi-delta up'>{kpis['ventas_top']} ventas</div>
         </div>
     </div>
-    """ + kpi_html, unsafe_allow_html=True)
-
+    """, unsafe_allow_html=True)
+    
     # === Visualizaciones Estilizadas ===
     st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
     st.markdown('<h3 class="visual-title">Visualizaciones Generales</h3>', unsafe_allow_html=True)
