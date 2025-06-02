@@ -1,7 +1,3 @@
-# ================================
-#           BACKEND
-# ================================
-
 import pandas as pd  # type: ignore
 from pathlib import Path
 import numpy as np  # type: ignore
@@ -74,15 +70,12 @@ def mostrar_scatter_entregas_rapidas(df_estado):
         plot_bgcolor='white',
         paper_bgcolor='white'
     )
-
     return fig
 
 
 def mostrar_linea_distribucion_entregas(dias_filtrados, rango):
-
     conteo_por_dia = dias_filtrados.value_counts().sort_index()
     conteo_por_dia = pd.Series(index=rango, dtype=int).fillna(0).add(conteo_por_dia, fill_value=0).astype(int)
-
     fig = go.Figure()
 
     fig.add_trace(go.Scatter(
@@ -114,8 +107,9 @@ def mostrar_linea_distribucion_entregas(dias_filtrados, rango):
         font_family="Arial"
     )
 )
-    return fig  # ✅ Muy importante
+    return fig  # Muy importante
 
+@st.cache_data(show_spinner="Cargando base de datos...")
 def cargar_datos():
     archivo = Path("UPDINTEGRADO.xlsx")
     if not archivo.exists():
@@ -133,7 +127,6 @@ def cargar_datos():
         return df, None
     except Exception as e:
         return None, str(e)
-
 
 def aplicar_filtros(df, categoria, estado):
     df_filtrado = df if categoria == 'Todos' else df[df['categoria_nombre_producto'] == categoria]
