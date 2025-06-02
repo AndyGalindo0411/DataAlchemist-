@@ -129,9 +129,9 @@ def vista_inicio():
             </div>
         </div>
         <div class='kpi-box'>
-            <div class='kpi-title'>% Entregas Rápidas en Alto Volumen</div>
+            <div class='kpi-title'>Entregas Rápidas en Alto Volumen</div>
             <div class='kpi-value'>{kpis['porcentaje_rapidas']:.2f} %</div>
-            <div class='kpi-delta up'>Volumen > p75 entregado en ≤ 7 días</div>
+            <div class='kpi-delta up'>Volumen alto entregado ≤ 7 días</div>
         </div>
         <div class='kpi-box'>
             <div class='kpi-title'>Top Categoría en {estado_seleccionado}</div>
@@ -229,7 +229,7 @@ def vista_inicio():
 
         fig_heatmap.update_layout(
             title=dict(
-                text="Mapa de Calor: Entregas Rápidas por Volumen",
+                text="Entregas Rápidas por Volumen",
                 x=0.5,
                 font=dict(size=18, color="black")
             ),
