@@ -1,9 +1,9 @@
 import pandas as pd  # type: ignore
 from pathlib import Path
 import numpy as np  # type: ignore
-import plotly.express as px # type: ignore
-import streamlit as st # type: ignore
-import plotly.graph_objects as go # type: ignore
+import plotly.express as px  # type: ignore
+import streamlit as st  # type: ignore
+import plotly.graph_objects as go  # type: ignore
 
 def mostrar_scatter_entregas_rapidas(df_estado):
     # === Limpieza ===
@@ -54,14 +54,14 @@ def mostrar_scatter_entregas_rapidas(df_estado):
         xaxis=dict(
             title="Días de Entrega (0–30 días)",
             tickfont=dict(size=11, color="black"),
-            showticklabels=False,  # 👈 Oculta etiquetas X
+            showticklabels=False,
             showgrid=False,
             zeroline=False
         ),
         yaxis=dict(
             title="Volumen del Pedido (rangos)",
             tickfont=dict(size=11, color="black"),
-            showticklabels=False,  # 👈 Oculta etiquetas Y
+            showticklabels=False,
             showgrid=False,
             zeroline=False
         ),
@@ -72,10 +72,10 @@ def mostrar_scatter_entregas_rapidas(df_estado):
     )
     return fig
 
-
 def mostrar_linea_distribucion_entregas(dias_filtrados, rango):
     conteo_por_dia = dias_filtrados.value_counts().sort_index()
     conteo_por_dia = pd.Series(index=rango, dtype=int).fillna(0).add(conteo_por_dia, fill_value=0).astype(int)
+
     fig = go.Figure()
 
     fig.add_trace(go.Scatter(
@@ -89,25 +89,29 @@ def mostrar_linea_distribucion_entregas(dias_filtrados, rango):
     ))
 
     fig.update_layout(
-    height=280,  # ⬅️ más bajo
-    width=500,   # ⬅️ más estrecho
-    margin=dict(t=30, b=40, l=40, r=20),
-    template="simple_white",
-    xaxis=dict(
-        title="Días de Entrega",
-        tickfont=dict(size=11, color="black")
-    ),
-    yaxis=dict(
-        title="Cantidad de Entregas",
-        tickfont=dict(size=11, color="black")
-    ),
-    hoverlabel=dict(
-        bgcolor="white",
-        font_size=12,
-        font_family="Arial"
+        height=250,
+        width=600,  # ⬅️ más compacto para que no se pierdan etiquetas
+        margin=dict(t=30, b=80, l=60, r=30),  # ⬅️ más margen inferior para etiquetas
+        template="simple_white",
+        xaxis=dict(
+            title="Días de Entrega",
+            tickmode="linear",
+            dtick=2,
+            tickangle=0,
+            tickfont=dict(size=11, color="black"),
+            showticklabels=True
+        ),
+        yaxis=dict(
+            title="Cantidad de Entregas",
+            tickfont=dict(size=12, color="black")
+        ),
+        hoverlabel=dict(
+            bgcolor="white",
+            font_size=12,
+            font_family="Arial"
+        )
     )
-)
-    return fig  # Muy importante
+    return fig
 
 @st.cache_data(show_spinner="Cargando base de datos...")
 def cargar_datos():
@@ -132,7 +136,6 @@ def aplicar_filtros(df, categoria, estado):
     df_filtrado = df if categoria == 'Todos' else df[df['categoria_nombre_producto'] == categoria]
     df_estado = df_filtrado if estado == 'Todos' else df_filtrado[df_filtrado['estado_del_cliente'] == estado]
     return df_filtrado, df_estado
-
 
 def calcular_kpis(df, df_filtrado, df_estado, tipo_entrega, categoria_seleccionada, estado_seleccionado):
     df_estado['volumen'] = pd.to_numeric(df_estado['volumen'], errors='coerce')
@@ -206,3 +209,47 @@ def calcular_kpis(df, df_filtrado, df_estado, tipo_entrega, categoria_selecciona
         "dias_filtrados": dias_filtrados,
         "rango": rango
     }
+
+# === NUEVA GRÁFICA PICTOGRAMA DE RETENCIÓN ===
+def grafica_barra_horizontal_retencion(retencion_cat, no_retenidos_cat):
+    fig = go.Figure(go.Bar(
+        x=[retencion_cat, no_retenidos_cat],
+        y=["Retenidos", "No Retenidos"],
+        orientation='h',
+        marker=dict(color=["#27AE60", "#C0392B"]),
+        text=[f"{retencion_cat:.1f}%", f"{no_retenidos_cat:.1f}%"],
+        textposition='inside',
+        insidetextfont=dict(size=13)  # ⬅️ texto más pequeño
+    ))
+
+    fig.update_layout(
+        title=dict(
+            text="Clientes Retenidos vs No Retenidos",
+            x=0.5,
+            xanchor="center",
+            font=dict(
+                size=18,
+                family="Arial",
+                color="black"
+            )
+        ),
+        xaxis=dict(
+            range=[0, 100],
+            title=dict(
+                text="Porcentaje",
+                font=dict(size=13, family="Arial", color="black")
+            ),
+            tickfont=dict(size=12, family="Arial")
+        ),
+        yaxis=dict(
+            title=None,
+            tickfont=dict(size=12, family="Arial")
+        ),
+        margin=dict(l=80, r=60, t=60, b=40),
+        height=300,
+        width=620,  # ✅ Ancho ajustado
+        paper_bgcolor='white',
+        plot_bgcolor='white'
+    )
+
+    return fig
