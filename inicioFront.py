@@ -8,6 +8,7 @@ import streamlit.components.v1 as components  # type: ignore
 
 from inicio import cargar_datos, aplicar_filtros, calcular_kpis, mostrar_scatter_entregas_rapidas
 from inicio import mostrar_linea_distribucion_entregas
+from inicio import grafica_barra_horizontal_retencion
 
 
 def vista_inicio():
@@ -144,52 +145,26 @@ def vista_inicio():
     # === Visualizaciones Estilizadas ===
     st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
     st.markdown('<h3 class="visual-title">Visualizaciones Generales</h3>', unsafe_allow_html=True)
-    # === Pie Chart + Bar Chart Distribución ===
+
+    # === Gráficas: Retención + Distribución ===
     col1, col2 = st.columns(2)
 
     with col1:
-        df_retencion = pd.DataFrame({
-            "Tipo de Cliente": ["Retenidos", "No Retenidos"],
-            "Porcentaje": [kpis['retencion_cat'], kpis['no_retenidos_cat']]
-        })
+        fig_retencion = grafica_barra_horizontal_retencion(kpis['retencion_cat'], kpis['no_retenidos_cat'])
+        html_retencion = fig_retencion.to_html(full_html=False, include_plotlyjs='cdn')
 
-        fig_ret = px.pie(
-            df_retencion,
-            values='Porcentaje',
-            names='Tipo de Cliente',
-            color_discrete_map={"Retenidos": "#020873", "No Retenidos": "#9999aa"}
-        )
-
-        fig_ret.update_traces(
-            marker=dict(colors=["#9999aa", "#020873"]),
-            textinfo="none",
-            hoverinfo="label+percent"
-        )
-
-        fig_ret.update_layout(
-            title=dict(
-                text="Clientes Retenidos vs No Retenidos",
-                x=0.5,
-                font=dict(size=18, color="black")
-            ),
-            paper_bgcolor='white',
-            plot_bgcolor='white',
-            legend=dict(orientation="h", y=-0.1, x=0.5, xanchor="center"),
-            margin=dict(t=60, b=30, l=30, r=30),
-            width=400, height=400,
-            hoverlabel=dict(
-                bgcolor="white",
-                font_size=14,
-                font_family="Arial"
-            )
-        )
-
-        html_pie = fig_ret.to_html(full_html=False, include_plotlyjs='cdn')
         components.html(f"""
-            <div style="box-shadow: 0px 12px 30px rgba(0, 0, 0, 0.4); border-radius: 16px; padding: 10px; width: fit-content; margin: auto; background-color: white;">
-                {html_pie}
+            <div style="
+                box-shadow: 0px 12px 30px rgba(0, 0, 0, 0.4);
+                border-radius: 16px;
+                padding: 10px;
+                background-color: white;
+                width: fit-content;
+                margin: auto;
+            ">
+                {html_retencion}
             </div>
-        """, height=450)
+        """, height=380)
 
     with col2:
         fig_linea = mostrar_linea_distribucion_entregas(kpis["dias_filtrados"], kpis["rango"])
@@ -199,10 +174,10 @@ def vista_inicio():
             <div style="
                 box-shadow: 0px 12px 30px rgba(0, 0, 0, 0.4);
                 border-radius: 16px;
-                padding: 10px 10px 20px 10px;  /* aumentamos padding abajo */
+                padding: 10px 10px 20px 10px;
+                background-color: white;
                 width: fit-content;
                 margin: auto;
-                background-color: white;
             ">
                 <div style="
                     font-size: 18px;
@@ -216,8 +191,7 @@ def vista_inicio():
                 </div>
                 {html_linea}
             </div>
-        """, height=400)  # ⬅️ Aumenta altura para mostrar eje X
-
+        """, height=350)
 
     # =======================
     # SEGUNDA FILA: Heatmap + Top 5
