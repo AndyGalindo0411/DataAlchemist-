@@ -89,8 +89,8 @@ def mostrar_linea_distribucion_entregas(dias_filtrados, rango):
     ))
 
     fig.update_layout(
-        height=250,
-        width=600,  # ⬅️ más compacto para que no se pierdan etiquetas
+        height=300,
+        width=550,  # ⬅️ más compacto para que no se pierdan etiquetas
         margin=dict(t=30, b=80, l=60, r=30),  # ⬅️ más margen inferior para etiquetas
         template="simple_white",
         xaxis=dict(
