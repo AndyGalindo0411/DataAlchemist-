@@ -66,7 +66,7 @@ def cargar_datos():
         return None, str(e)
 
 def aplicar_filtros(df, categoria, estado, tipo_entrega):
-    df_filtrado = df if categoria == 'Todos' else df[df['categoria_nombre_producto'] == categoria]
+    df_filtrado = df if categoria == 'Todos' else df[df['categoria_de_productos'] == categoria]
     df_estado = df_filtrado if estado == 'Todos' else df_filtrado[df_filtrado['estado_del_cliente'] == estado]
 
     # Copia para evitar errores al modificar columnas
@@ -102,7 +102,7 @@ def calcular_kpis(df, df_filtrado, df_estado, tipo_entrega, categoria_selecciona
     # Calcular volumen promedio según tipo de entrega y categoría
     volumen_promedio = 0
     if categoria_seleccionada != 'Todos':
-        df_categoria = df_estado[df_estado['categoria_nombre_producto'] == categoria_seleccionada]
+        df_categoria = df_estado[df_estado['categoria_de_productos'] == categoria_seleccionada]
     else:
         df_categoria = df_estado
 
@@ -145,7 +145,7 @@ def calcular_kpis(df, df_filtrado, df_estado, tipo_entrega, categoria_selecciona
     
     # Usar solo el filtro por estado
     df_estado_top = df if estado_seleccionado == 'Todos' else df[df['estado_del_cliente'] == estado_seleccionado]
-    top5_estado = df_estado_top['categoria_nombre_producto'].value_counts().head(5)
+    top5_estado = df_estado_top['categoria_de_productos'].value_counts().head(5)
     top_categoria = top5_estado.index[0] if not top5_estado.empty else "—"
     ventas_top = int(top5_estado.iloc[0]) if not top5_estado.empty else 0
 
@@ -179,7 +179,7 @@ def calcular_kpis(df, df_filtrado, df_estado, tipo_entrega, categoria_selecciona
 
 def obtener_top5_por_estado(df, estado_seleccionado):
     df_estado = df if estado_seleccionado == 'Todos' else df[df['estado_del_cliente'] == estado_seleccionado]
-    top5 = df_estado['categoria_nombre_producto'].value_counts().head(5).reset_index()
+    top5 = df_estado['categoria_de_productos'].value_counts().head(5).reset_index()
     top5.columns = ['Categoría', 'Ventas']
     return top5
 
@@ -187,7 +187,7 @@ def obtener_top5_por_estado(df, estado_seleccionado):
 def mostrar_dispersion_volumen_vs_flete_filtrado(df, categoria, tipo_entrega):
     # === Filtrar solo por categoría ===
     if categoria != 'Todos':
-        df = df[df['categoria_nombre_producto'] == categoria]
+        df = df[df['categoria_de_productos'] == categoria]
 
     # === Asegurar formato numérico ===
     df['tiempo_total_entrega_dias'] = pd.to_numeric(df['tiempo_total_entrega_dias'], errors='coerce')
