@@ -5,73 +5,6 @@ import plotly.express as px  # type: ignore
 import streamlit as st  # type: ignore
 import plotly.graph_objects as go  # type: ignore
 
-def mostrar_scatter_entregas_rapidas(df_estado):
-    # === Limpieza ===
-    df_estado['volumen'] = pd.to_numeric(df_estado['volumen'], errors='coerce')
-    df_estado['tiempo_total_entrega_dias'] = pd.to_numeric(df_estado['tiempo_total_entrega_dias'], errors='coerce')
-    df_estado = df_estado.dropna(subset=["volumen", "tiempo_total_entrega_dias"])
-
-    # === Filtro ≤ 30 días ===
-    df_estado = df_estado[df_estado['tiempo_total_entrega_dias'] <= 30]
-
-    # === Solo pedidos de alto volumen ===
-    umbral_volumen = df_estado['volumen'].quantile(0.75)
-    alto_volumen = df_estado[df_estado['volumen'] > umbral_volumen]
-
-    # === Bins personalizados (más claros) ===
-    alto_volumen['volumen_bin'] = pd.cut(alto_volumen['volumen'], bins=6)
-    alto_volumen['dias_bin'] = pd.cut(alto_volumen['tiempo_total_entrega_dias'], bins=6, right=True)
-
-    # === Etiquetas legibles ===
-    alto_volumen['volumen_str'] = alto_volumen['volumen_bin'].apply(lambda x: f"{int(x.left):,} – {int(x.right):,}")
-    alto_volumen['dias_str'] = alto_volumen['dias_bin'].apply(lambda x: f"{int(x.left)} – {int(x.right)} días")
-
-    # === Agrupación ===
-    heatmap_df = alto_volumen.groupby(['volumen_str', 'dias_str']).size().reset_index(name='conteo')
-    pivot_table = heatmap_df.pivot(index='volumen_str', columns='dias_str', values='conteo').fillna(0)
-
-    # === Heatmap con color personalizado azul ===
-    fig = go.Figure(data=go.Heatmap(
-        z=pivot_table.values,
-        x=list(pivot_table.columns),
-        y=list(pivot_table.index),
-        colorscale=[
-            [0.0, "#8287DB"],
-            [0.25, "#6468B3"],
-            [0.5, "#424688"],
-            [0.75, "#020873"],
-            [1.0, '#010440']
-        ],
-        colorbar=dict(title='Cantidad de Pedidos'),
-        hovertemplate=
-            'Volumen: %{y}<br>' +
-            'Días de Entrega: %{x}<br>' +
-            'Cantidad: %{z}<extra></extra>'
-    ))
-
-    fig.update_layout(
-        title="Mapa de Calor: Entregas ≤ 30 días en Alto Volumen",
-        xaxis=dict(
-            title="Días de Entrega (0–30 días)",
-            tickfont=dict(size=11, color="black"),
-            showticklabels=False,
-            showgrid=False,
-            zeroline=False
-        ),
-        yaxis=dict(
-            title="Volumen del Pedido (rangos)",
-            tickfont=dict(size=11, color="black"),
-            showticklabels=False,
-            showgrid=False,
-            zeroline=False
-        ),
-        height=450,
-        margin=dict(t=60, b=60, l=80, r=40),
-        plot_bgcolor='white',
-        paper_bgcolor='white'
-    )
-    return fig
-
 def mostrar_linea_distribucion_entregas(dias_filtrados, rango):
     conteo_por_dia = dias_filtrados.value_counts().sort_index()
     conteo_por_dia = pd.Series(index=rango, dtype=int).fillna(0).add(conteo_por_dia, fill_value=0).astype(int)
@@ -132,23 +65,57 @@ def cargar_datos():
     except Exception as e:
         return None, str(e)
 
-def aplicar_filtros(df, categoria, estado):
+def aplicar_filtros(df, categoria, estado, tipo_entrega):
     df_filtrado = df if categoria == 'Todos' else df[df['categoria_nombre_producto'] == categoria]
     df_estado = df_filtrado if estado == 'Todos' else df_filtrado[df_filtrado['estado_del_cliente'] == estado]
+
+    # Copia para evitar errores al modificar columnas
+    df_estado = df_estado.copy()
+
+    # Asegurar formato numérico
+    df_estado['tiempo_total_entrega_dias'] = pd.to_numeric(df_estado['tiempo_total_entrega_dias'], errors='coerce')
+
+    # Aplicar tipo_entrega
+    if tipo_entrega == "Prime (0–3 días)":
+        df_estado = df_estado[df_estado['tiempo_total_entrega_dias'].between(0, 3)]
+    elif tipo_entrega == "Express (4–7 días)":
+        df_estado = df_estado[df_estado['tiempo_total_entrega_dias'].between(4, 7)]
+    elif tipo_entrega == "Regular (8–30 días)":
+        df_estado = df_estado[df_estado['tiempo_total_entrega_dias'].between(8, 30)]
+    else:
+        df_estado = df_estado[df_estado['tiempo_total_entrega_dias'].between(0, 30)]
+
     return df_filtrado, df_estado
 
 def calcular_kpis(df, df_filtrado, df_estado, tipo_entrega, categoria_seleccionada, estado_seleccionado):
+    # Asegurar que las columnas clave estén en formato correcto
     df_estado['volumen'] = pd.to_numeric(df_estado['volumen'], errors='coerce')
     df_estado['tiempo_total_entrega_dias'] = pd.to_numeric(df_estado['tiempo_total_entrega_dias'], errors='coerce')
 
-    umbral_volumen_alto = df_estado['volumen'].quantile(0.75)
-    pedidos_alto_volumen = df_estado[df_estado['volumen'] > umbral_volumen_alto]
-    entregas_rapidas_vol = pedidos_alto_volumen[pedidos_alto_volumen['tiempo_total_entrega_dias'] <= 7]
-
-    porcentaje_rapidas = (
-        len(entregas_rapidas_vol) / len(pedidos_alto_volumen) * 100
-        if len(pedidos_alto_volumen) > 0 else 0
+    # Clasificar tipo de entrega
+    df_estado['tipo_entrega'] = pd.cut(
+        df_estado['tiempo_total_entrega_dias'],
+        bins=[-1, 3, 7, float('inf')],
+        labels=["Prime", "Express", "Regular"]
     )
+
+    # Calcular volumen promedio según tipo de entrega y categoría
+    volumen_promedio = 0
+    if categoria_seleccionada != 'Todos':
+        df_categoria = df_estado[df_estado['categoria_nombre_producto'] == categoria_seleccionada]
+    else:
+        df_categoria = df_estado
+
+    if tipo_entrega in ["Prime (0–3 días)", "Express (4–7 días)", "Regular (8–30 días)"]:
+        tipo = tipo_entrega.split()[0]  # "Prime", "Express", "Regular"
+        df_tipo = df_categoria[df_categoria['tipo_entrega'] == tipo]
+        volumen_promedio = df_tipo['volumen'].mean()
+    else:
+        volumen_promedio = df_categoria['volumen'].mean()
+
+    volumen_promedio = round(volumen_promedio, 2) if not pd.isna(volumen_promedio) else 0
+
+    # === KPI adicionales se mantienen ===
 
     periodos_cat = df_filtrado.groupby('id_único_de_cliente')['periodo'].nunique()
     retenidos_cat = periodos_cat[periodos_cat > 1].count()
@@ -159,36 +126,36 @@ def calcular_kpis(df, df_filtrado, df_estado, tipo_entrega, categoria_selecciona
     dias = df_filtrado['tiempo_total_entrega_dias'].dropna()
     if tipo_entrega == "Prime (0–3 días)":
         dias_filtrados = dias[dias.between(0, 3)]
-        titulo_kpi = "Entrega Promedio Prime (días)"
+        titulo_kpi = "Volumen Promedio Prime"
         rango = range(0, 4)
     elif tipo_entrega == "Express (4–7 días)":
         dias_filtrados = dias[dias.between(4, 7)]
-        titulo_kpi = "Entrega Promedio Express (días)"
+        titulo_kpi = "Volumen Promedio Express"
         rango = range(4, 8)
     elif tipo_entrega == "Regular (8–30 días)":
         dias_filtrados = dias[dias.between(8, 30)]
-        titulo_kpi = "Entrega Promedio Regular (días)"
+        titulo_kpi = "Volumen Promedio Regular"
         rango = range(8, 31)
     else:
         dias_filtrados = dias[dias.between(0, 30)]
-        titulo_kpi = "Entrega Promedio (días)"
+        titulo_kpi = "Volumen Promedio (todos)"
         rango = range(0, 31)
 
     promedio_filtrado = round(dias_filtrados.mean()) if not dias_filtrados.empty else 0
+    
+    # Usar solo el filtro por estado
+    df_estado_top = df if estado_seleccionado == 'Todos' else df[df['estado_del_cliente'] == estado_seleccionado]
+    top5_estado = df_estado_top['categoria_nombre_producto'].value_counts().head(5)
+    top_categoria = top5_estado.index[0] if not top5_estado.empty else "—"
+    ventas_top = int(top5_estado.iloc[0]) if not top5_estado.empty else 0
 
-    top5 = df_estado['categoria_nombre_producto'].value_counts().head(5)
-    top_categoria = top5.index[0] if not top5.empty else "—"
-    ventas_top = int(top5.iloc[0]) if not top5.empty else 0
+    #top5 = df_estado['categoria_nombre_producto'].value_counts().head(5)
+    #top_categoria = top5.index[0] if not top5.empty else "—"
+    #ventas_top = int(top5.iloc[0]) if not top5.empty else 0
 
     ahorro_prime = ahorro_express = None
     if 'valor_total' in df_estado.columns and 'tiempo_total_entrega_dias' in df_estado.columns:
         df_estado['valor_total'] = pd.to_numeric(df_estado['valor_total'], errors='coerce')
-        df_estado['tipo_entrega'] = pd.cut(
-            df_estado['tiempo_total_entrega_dias'],
-            bins=[-1, 3, 7, float('inf')],
-            labels=["Prime", "Express", "Regular"]
-        )
-
         valor_promedio = df_estado.groupby("tipo_entrega")["valor_total"].mean()
         baseline = valor_promedio.get("Regular", None)
 
@@ -197,7 +164,7 @@ def calcular_kpis(df, df_filtrado, df_estado, tipo_entrega, categoria_selecciona
             ahorro_prime = 100 * (baseline - valor_promedio.get("Prime", 0)) / baseline
 
     return {
-        "porcentaje_rapidas": porcentaje_rapidas,
+        "volumen_promedio": volumen_promedio,
         "retencion_cat": retencion_cat,
         "no_retenidos_cat": no_retenidos_cat,
         "titulo_kpi": titulo_kpi,
@@ -210,46 +177,56 @@ def calcular_kpis(df, df_filtrado, df_estado, tipo_entrega, categoria_selecciona
         "rango": rango
     }
 
-# === NUEVA GRÁFICA PICTOGRAMA DE RETENCIÓN ===
-def grafica_barra_horizontal_retencion(retencion_cat, no_retenidos_cat):
-    fig = go.Figure(go.Bar(
-        x=[retencion_cat, no_retenidos_cat],
-        y=["Retenidos", "No Retenidos"],
-        orientation='h',
-        marker=dict(color=["#27AE60", "#C0392B"]),
-        text=[f"{retencion_cat:.1f}%", f"{no_retenidos_cat:.1f}%"],
-        textposition='inside',
-        insidetextfont=dict(size=13)  # ⬅️ texto más pequeño
-    ))
+def obtener_top5_por_estado(df, estado_seleccionado):
+    df_estado = df if estado_seleccionado == 'Todos' else df[df['estado_del_cliente'] == estado_seleccionado]
+    top5 = df_estado['categoria_nombre_producto'].value_counts().head(5).reset_index()
+    top5.columns = ['Categoría', 'Ventas']
+    return top5
+
+
+def mostrar_dispersion_volumen_vs_flete_filtrado(df, categoria, tipo_entrega):
+    # === Filtrar solo por categoría ===
+    if categoria != 'Todos':
+        df = df[df['categoria_nombre_producto'] == categoria]
+
+    # === Asegurar formato numérico ===
+    df['tiempo_total_entrega_dias'] = pd.to_numeric(df['tiempo_total_entrega_dias'], errors='coerce')
+    df['volumen'] = pd.to_numeric(df['volumen'], errors='coerce')
+    df['costo_de_flete'] = pd.to_numeric(df['costo_de_flete'], errors='coerce')
+
+    # === Filtrar por tipo de entrega ===
+    if tipo_entrega == "Prime (0–3 días)":
+        df = df[df['tiempo_total_entrega_dias'].between(0, 3)]
+    elif tipo_entrega == "Express (4–7 días)":
+        df = df[df['tiempo_total_entrega_dias'].between(4, 7)]
+    elif tipo_entrega == "Regular (8–30 días)":
+        df = df[df['tiempo_total_entrega_dias'].between(8, 30)]
+    else:
+        df = df[df['tiempo_total_entrega_dias'].between(0, 30)]
+
+    # === Limpiar NaNs ===
+    df = df.dropna(subset=['volumen', 'costo_de_flete'])
+
+    fig = px.scatter(
+        df,
+        x='volumen',
+        y='costo_de_flete',
+        labels={
+            'volumen': 'Volumen (cm³)',
+            'costo_de_flete': 'Costo de Flete ($)',
+        },
+        opacity=0.7
+    )
+
+    fig.update_traces(marker=dict(color='rgba(4, 9, 89, 0.7)'), showlegend=False)
 
     fig.update_layout(
-        title=dict(
-            text="Clientes Retenidos vs No Retenidos",
-            x=0.5,
-            xanchor="center",
-            font=dict(
-                size=18,
-                family="Arial",
-                color="black"
-            )
-        ),
-        xaxis=dict(
-            range=[0, 100],
-            title=dict(
-                text="Porcentaje",
-                font=dict(size=13, family="Arial", color="black")
-            ),
-            tickfont=dict(size=12, family="Arial")
-        ),
-        yaxis=dict(
-            title=None,
-            tickfont=dict(size=12, family="Arial")
-        ),
-        margin=dict(l=80, r=60, t=60, b=40),
-        height=300,
-        width=620,  # ✅ Ancho ajustado
-        paper_bgcolor='white',
-        plot_bgcolor='white'
+        height=400,
+        margin=dict(t=0, b=80, l=60, r=30),
+        plot_bgcolor="white",
+        paper_bgcolor="white",
+        font=dict(family="Arial", size=12),
+        hoverlabel=dict(bgcolor="white", font_size=12, font_family="Arial")
     )
 
     return fig

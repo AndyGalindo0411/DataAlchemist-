@@ -6,9 +6,11 @@ import plotly.express as px  # type: ignore
 import plotly.graph_objects as go  # type: ignore
 import streamlit.components.v1 as components  # type: ignore
 
-from inicio import cargar_datos, aplicar_filtros, calcular_kpis, mostrar_scatter_entregas_rapidas
+from inicio import cargar_datos, aplicar_filtros, calcular_kpis
+from inicio import obtener_top5_por_estado
 from inicio import mostrar_linea_distribucion_entregas
-from inicio import grafica_barra_horizontal_retencion
+from inicio import mostrar_dispersion_volumen_vs_flete_filtrado  # ✅ Asegúrate de tener esto
+
 
 
 def vista_inicio():
@@ -114,7 +116,7 @@ def vista_inicio():
             "Regular (8–30 días)"
         ])
 
-    df_filtrado, df_estado = aplicar_filtros(df, categoria_seleccionada, estado_seleccionado)
+    df_filtrado, df_estado = aplicar_filtros(df, categoria_seleccionada, estado_seleccionado, tipo_entrega)
     kpis = calcular_kpis(df, df_filtrado, df_estado, tipo_entrega, categoria_seleccionada, estado_seleccionado)
 
     st.markdown(f"""
@@ -134,9 +136,11 @@ def vista_inicio():
         </div>
     </div>
     <div class='kpi-box'>
-        <div class='kpi-title'>Entregas Rápidas en Alto Volumen</div>
-        <div class='kpi-value'>{kpis['porcentaje_rapidas']:.2f} %</div>
-        <div class='kpi-delta up'>Volumen alto entregado ≤ 7 días</div>
+        <div class='kpi-title'>Volumen Promedio</div>
+        <div class='kpi-value'>{int(kpis['volumen_promedio']):,} cm³</div>
+        <div class='kpi-delta {"up" if kpis['volumen_promedio'] >= 0 else "down"}'>
+            Volumen medio en {categoria_seleccionada}
+        </div>
     </div>
     <div class='kpi-box'>
         <div class='kpi-title'>Top Categoría en {estado_seleccionado}</div>
@@ -146,99 +150,105 @@ def vista_inicio():
 </div>
 """, unsafe_allow_html=True)
     
-    # === FILA: Distribución de Entregas + Top Categorías ===
-    col1, col2 = st.columns([0.8,1])
+    # === FILA: Distribución + Dispersión a la izquierda, Top Categorías a la derecha ===
+    # === UNIFICADO: Las tres gráficas en una sola tarjeta ===
+    # Preparamos las gráficas individualmente
+    fig_linea = mostrar_linea_distribucion_entregas(kpis["dias_filtrados"], kpis["rango"])
+    html_linea = fig_linea.to_html(full_html=False, include_plotlyjs='cdn')
 
-    # Gráfica de Distribución de Entregas
-    with col1:
-        fig_linea = mostrar_linea_distribucion_entregas(kpis["dias_filtrados"], kpis["rango"])
-        html_linea = fig_linea.to_html(full_html=False, include_plotlyjs='cdn')
-        components.html(f"""
+    fig_dispersion = mostrar_dispersion_volumen_vs_flete_filtrado(df, categoria_seleccionada, tipo_entrega)  # type: ignore
+    html_dispersion = fig_dispersion.to_html(full_html=False, include_plotlyjs='cdn')
+
+    top5 = obtener_top5_por_estado(df, estado_seleccionado)
+    top5.columns = ['Categoría', 'Ventas']
+    fig_top5 = px.bar(
+        top5,
+        x='Categoría',
+        y='Ventas',
+        color='Categoría',
+        color_discrete_sequence=["#040959"] * 5
+    )
+    fig_top5.update_traces(
+        marker_line=dict(color='black', width=1.5),
+        hovertemplate='<b>%{x}</b><br>Ventas: %{y}<extra></extra>',
+    )
+    fig_top5.update_layout(
+        title=None,
+        xaxis_title="Categoría",
+        yaxis_title="Ventas",
+        paper_bgcolor='white',
+        plot_bgcolor='white',
+        showlegend=False,
+        height=250,   # Igual que distribución
+        width=600,    # Ajustado al tamaño izquierdo
+        margin=dict(t=0, b=80, l=100, r=60),
+        xaxis=dict(tickangle=-20, tickfont=dict(size=11), automargin=True),
+        yaxis=dict(tickfont=dict(size=12)),
+        hoverlabel=dict(bgcolor="white", font_size=13, font_family="Arial")
+    )
+    html_top5 = fig_top5.to_html(full_html=False, include_plotlyjs='cdn')
+
+    components.html(f"""
+<div style="
+    box-shadow: 0px 12px 30px rgba(0, 0, 0, 0.4);
+    border-radius: 16px;
+    padding: 15px;
+    background-color: white;
+    width: 100%;
+    max-width: 1200px;
+    margin: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+">
+
+    <!-- FILA SUPERIOR: Distribución y Top Categorías -->
+    <div style="display: flex; flex-direction: row; gap: -100px;">
+        <!-- IZQUIERDA: Distribución -->
+        <div style="flex: 1;">
             <div style="
-                box-shadow: 0px 12px 30px rgba(0, 0, 0, 0.4);
-                border-radius: 16px;
-                padding: 10px 10px 20px 10px;
-                background-color: white;
-                width: 100%;
-                margin: auto;
-            ">
-                <div style="
-                    font-size: 18px;
-                    font-weight: 600;
-                    text-align: center;
-                    color: black;
-                    margin-bottom: 10px;
-                    font-family: Arial, sans-serif;
-                ">
-                    Distribución de Entregas
-                </div>
-                {html_linea}
-            </div>
-        """, height=450)
+                font-size: 18px;
+                font-weight: 600;
+                text-align: center;
+                color: black;
+                margin-bottom: 10px;
+                font-family: Arial, sans-serif;
+            ">Distribución de Entregas</div>
+            {html_linea}
+        </div>
 
-    # Gráfica de Top Categorías
-    with col2:
-        top5 = df_estado['categoria_nombre_producto'].value_counts().head(5).reset_index()
-        top5.columns = ['Categoría', 'Ventas']
-
-        fig_top5 = px.bar(
-            top5,
-            x='Categoría',
-            y='Ventas',
-            color='Categoría',
-            color_discrete_sequence=["#040959"] * 5
-        )
-
-        fig_top5.update_traces(
-            marker_line=dict(color='black', width=1.5),
-            hovertemplate='<b>%{x}</b><br>Ventas: %{y}<extra></extra>',
-        )
-
-        fig_top5.update_layout(
-            title=None,
-            xaxis_title="Categoría",
-            yaxis_title="Ventas",
-            paper_bgcolor='white',
-            plot_bgcolor='white',
-            showlegend=False,
-            height=300,
-            #width=600, 
-            margin=dict(t=40, b=120, l=60, r=100),
-            xaxis=dict(
-                tickangle=-20,
-                tickfont=dict(size=11),
-                automargin=True,
-            ),
-            yaxis=dict(
-                tickfont=dict(size=12)
-            ),
-            hoverlabel=dict(
-                bgcolor="white",
-                font_size=13,
-                font_family="Arial"
-            )
-        )
-
-        html_top5 = fig_top5.to_html(full_html=False, include_plotlyjs='cdn')
-        components.html(f"""
+        <!-- DERECHA: Top Categorías -->
+        <div style="flex: 2;">
             <div style="
-                box-shadow: 0px 12px 30px rgba(0, 0, 0, 0.4);
-                border-radius: 16px;
-                padding: 10px;
-                background-color: white;
-                width: 90%;
-                margin: auto;
-            ">
-                <div style="
-                    font-size: 18px;
-                    font-weight: 600;
-                    text-align: center;
-                    color: black;
-                    margin-bottom: 10px;
-                    font-family: Arial, sans-serif;
-                ">
-                    Top Categorías en {estado_seleccionado}
-                </div>
-                {html_top5}
-            </div>
-        """, height=600)
+                font-size: 18px;
+                font-weight: 600;
+                text-align: center;
+                color: black;
+                margin-bottom: 30px;
+                font-family: Arial, sans-serif;
+            ">Top Categorías en {estado_seleccionado}</div>
+            {html_top5}
+        </div>
+    </div>
+
+    <!-- FILA INFERIOR: Volumen vs Costo de Flete alineada con el ancho de Top Categorías -->
+    <div style="width: 100%; margin: auto;">
+        <div style="
+            font-size: 18px;
+            font-weight: 600;
+            text-align: center;
+            color: black;
+            margin-bottom: 5px;
+            font-family: Arial, sans-serif;
+    ">Volumen vs Costo de Flete</div>
+    <style>
+        .js-plotly-plot .main-svg .infolayer .gtitle {{
+            display: none !important;
+        }}
+    </style>
+    {html_dispersion}
+</div>
+
+
+</div>
+""", height=1050)
