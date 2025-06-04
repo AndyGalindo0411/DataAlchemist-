@@ -7,7 +7,7 @@ import plotly.graph_objects as go  # type: ignore
 import streamlit.components.v1 as components  # type: ignore
 
 from inicio import cargar_datos, aplicar_filtros, calcular_kpis
-from inicio import obtener_top5_por_region
+from inicio import obtener_top5_top_categorias
 from inicio import mostrar_linea_distribucion_entregas
 from inicio import mostrar_dispersion_volumen_vs_flete_filtrado  # ✅ Asegúrate de tener esto
 
@@ -196,7 +196,7 @@ def vista_inicio():
     fig_dispersion = mostrar_dispersion_volumen_vs_flete_filtrado(df, categoria_seleccionada, tipo_entrega)  # type: ignore
     html_dispersion = fig_dispersion.to_html(full_html=False, include_plotlyjs='cdn')
 
-    top5 = obtener_top5_por_region(df, region_seleccionada)
+    top5 = obtener_top5_top_categorias(df, region_seleccionada, fecha_periodo)
     top5.columns = ['Categoría', 'Ventas']
     fig_top5 = px.bar(
         top5,
@@ -223,6 +223,17 @@ def vista_inicio():
         yaxis=dict(tickfont=dict(size=12)),
         hoverlabel=dict(bgcolor="white", font_size=13, font_family="Arial")
     )
+
+    # Antes del HTML
+    if region_seleccionada != 'Todos' and fecha_periodo != 'Todos':
+        titulo_top = f"Top Categorías en {region_seleccionada} - {fecha_seleccionada}"
+    elif region_seleccionada != 'Todos':
+        titulo_top = f"Top Categorías en {region_seleccionada}"
+    elif fecha_periodo != 'Todos':
+        titulo_top = f"Top Categorías en {fecha_seleccionada}"
+    else:
+        titulo_top = "Top Categorías (General)"
+
     html_top5 = fig_top5.to_html(full_html=False, include_plotlyjs='cdn')
 
     components.html(f"""
@@ -263,7 +274,7 @@ def vista_inicio():
                 color: black;
                 margin-bottom: 30px;
                 font-family: Arial, sans-serif;
-            ">Top Categorías en {region_seleccionada}</div>
+            ">{titulo_top}</div>
             {html_top5}
         </div>
     </div>
