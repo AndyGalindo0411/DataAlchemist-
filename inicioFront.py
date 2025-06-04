@@ -7,7 +7,7 @@ import plotly.graph_objects as go  # type: ignore
 import streamlit.components.v1 as components  # type: ignore
 
 from inicio import cargar_datos, aplicar_filtros, calcular_kpis
-from inicio import obtener_top5_por_estado
+from inicio import obtener_top5_por_region
 from inicio import mostrar_linea_distribucion_entregas
 from inicio import mostrar_dispersion_volumen_vs_flete_filtrado  # ✅ Asegúrate de tener esto
 
@@ -117,9 +117,6 @@ def vista_inicio():
         categorias = ['Todos'] + sorted(df['categoria_de_productos'].dropna().unique().tolist())
         categoria_seleccionada = st.selectbox("Categoría", categorias)
 
-        estados = ['Todos'] + sorted(df['estado_del_cliente'].dropna().unique().tolist())
-        estado_seleccionado = st.selectbox("Estado", estados)
-
         tipo_entrega = st.selectbox("Tipo de Entrega", [
             "De (0-30 días)",
             "Prime (0–3 días)",
@@ -134,12 +131,29 @@ def vista_inicio():
         # Crear selector de fecha en formato Mes - Año
         df['orden_compra_timestamp_fecha'] = pd.to_datetime(df['orden_compra_timestamp_fecha'], errors='coerce')
         fechas_unicas = df['orden_compra_timestamp_fecha'].dropna().dt.to_period('M').drop_duplicates().sort_values()
-        fechas_formato = fechas_unicas.astype(str).str.replace('-', ' - ', regex=False)
+        fechas_formato = ['Todos'] + fechas_unicas.astype(str).str.replace('-', ' - ', regex=False).tolist()
 
-        fecha_seleccionada = st.selectbox("Fecha (Mes - Año)", fechas_formato.tolist())
+        fecha_seleccionada = st.selectbox("Fecha (Mes - Año)", fechas_formato)
+        fecha_periodo = None if fecha_seleccionada == 'Todos' else fecha_seleccionada.replace(" - ", "-")  # Convertir a formato 'YYYY-MM'
 
-    df_filtrado, df_estado = aplicar_filtros(df, categoria_seleccionada, estado_seleccionado, tipo_entrega)
-    kpis = calcular_kpis(df, df_filtrado, df_estado, tipo_entrega, categoria_seleccionada, estado_seleccionado)
+        # Aplicar filtros con fecha incluida
+        df_filtrado, df_region = aplicar_filtros(
+            df,
+            categoria_seleccionada,
+            region_seleccionada,
+            tipo_entrega,
+            fecha_periodo
+        )
+
+        # Calcular KPIs
+        kpis = calcular_kpis(
+            df,
+            df_filtrado,
+            df_region,
+            tipo_entrega,
+            categoria_seleccionada,
+            region_seleccionada
+        )
 
     st.markdown(f"""
 <div class='kpi-container'>
@@ -165,7 +179,7 @@ def vista_inicio():
         </div>
     </div>
     <div class='kpi-box'>
-        <div class='kpi-title'>Top Categoría en {estado_seleccionado}</div>
+        <div class='kpi-title'>Top Categoría en {region_seleccionada}</div>
         <div class='kpi-value up'>{kpis['ventas_top']}</div>
         <div class='kpi-ventas-texto'>ventas</div>
         <div class='kpi-categoria-ajustada'>{kpis['top_categoria']}</div>
@@ -182,7 +196,7 @@ def vista_inicio():
     fig_dispersion = mostrar_dispersion_volumen_vs_flete_filtrado(df, categoria_seleccionada, tipo_entrega)  # type: ignore
     html_dispersion = fig_dispersion.to_html(full_html=False, include_plotlyjs='cdn')
 
-    top5 = obtener_top5_por_estado(df, estado_seleccionado)
+    top5 = obtener_top5_por_region(df, region_seleccionada)
     top5.columns = ['Categoría', 'Ventas']
     fig_top5 = px.bar(
         top5,
@@ -249,7 +263,7 @@ def vista_inicio():
                 color: black;
                 margin-bottom: 30px;
                 font-family: Arial, sans-serif;
-            ">Top Categorías en {estado_seleccionado}</div>
+            ">Top Categorías en {region_seleccionada}</div>
             {html_top5}
         </div>
     </div>
