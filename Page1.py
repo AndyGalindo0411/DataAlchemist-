@@ -3,8 +3,9 @@ import streamlit as st  # type: ignore
 # ✅ IMPORTACIÓN CORRECTA DEL FRONTEND
 from inicioFront import vista_inicio
 from datos import vista_exploracion
-from visualizacion import vista_visualizacion
+from prediccion import vista_prediccion
 from configuracion import vista_configuracion
+
 
 # === Configuración general ===
 st.set_page_config(page_title="Data Alchemist", layout="wide")
@@ -37,8 +38,8 @@ if st.sidebar.button("Inicio"):
     st.session_state.seccion_activa = "Inicio"
 if st.sidebar.button("Exploración de Datos"):
     st.session_state.seccion_activa = "Exploración de Datos"
-if st.sidebar.button("Visualización"):
-    st.session_state.seccion_activa = "Visualización"
+if st.sidebar.button("Predicción"):
+    st.session_state.seccion_activa = "Predicción"
 if st.sidebar.button("Configuración"):
     st.session_state.seccion_activa = "Configuración"
 
@@ -50,7 +51,7 @@ if st.session_state.seccion_activa == "Inicio":
     vista_inicio()
 elif st.session_state.seccion_activa == "Exploración de Datos":
     vista_exploracion()
-elif st.session_state.seccion_activa == "Visualización":
-    vista_visualizacion()
+elif st.session_state.seccion_activa == "Predicción":
+    vista_prediccion()
 elif st.session_state.seccion_activa == "Configuración":
     vista_configuracion()
