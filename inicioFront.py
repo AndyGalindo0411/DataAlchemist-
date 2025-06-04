@@ -86,8 +86,12 @@ def vista_inicio():
     </style>
     """, unsafe_allow_html=True)
 
-    st.markdown("<div class='titulo-principal'>Danu Shop</div>", unsafe_allow_html=True)
-    st.markdown("<div class='subtitulo'>Panel de Indicadores Clave y Estratégicos</div>", unsafe_allow_html=True)
+    st.markdown("""
+<div style='text-align: left; padding-bottom: 1rem;'>
+    <span style='font-size: 40px; font-weight: 900;'>Danu Shop</span>
+    <span style='font-size: 24px; font-weight: 500; color: #444;'> - Panel de Indicadores Clave y Estratégicos</span>
+</div>
+""", unsafe_allow_html=True)
 
     df, error = cargar_datos()
     if error:
@@ -114,69 +118,48 @@ def vista_inicio():
     kpis = calcular_kpis(df, df_filtrado, df_estado, tipo_entrega, categoria_seleccionada, estado_seleccionado)
 
     st.markdown(f"""
-    <div class='kpi-container'>
-        <div class='kpi-box'>
-            <div class='kpi-title'>{kpis['titulo_kpi']}</div>
-            <div class='kpi-value'>{kpis['promedio_filtrado']}</div>
-            <div class='kpi-delta {"up" if kpis['promedio_filtrado'] < 7 else "down"}'>
-                {"Ideal < 7 días" if kpis['promedio_filtrado'] < 7 else "Excede lo ideal (> 7 días)"}
-            </div>
-        </div>
-        <div class='kpi-box'>
-            <div class='kpi-title'>Tasa de Retención ({categoria_seleccionada})</div>
-            <div class='kpi-value'>{kpis['retencion_cat']:.2f} %</div>
-            <div class='kpi-delta {"up" if kpis['retencion_cat'] >= 3 else "down"}'>
-                {"⬆ Retención superior al ideal" if kpis['retencion_cat'] >= 3 else "⬇ Retención inferior al ideal"}
-            </div>
-        </div>
-        <div class='kpi-box'>
-            <div class='kpi-title'>Entregas Rápidas en Alto Volumen</div>
-            <div class='kpi-value'>{kpis['porcentaje_rapidas']:.2f} %</div>
-            <div class='kpi-delta up'>Volumen alto entregado ≤ 7 días</div>
-        </div>
-        <div class='kpi-box'>
-            <div class='kpi-title'>Top Categoría en {estado_seleccionado}</div>
-            <div class='kpi-value kpi-categoria'>{kpis['top_categoria']}</div>
-            <div class='kpi-delta up'>{kpis['ventas_top']} ventas</div>
+<div class='kpi-container'>
+    <div class='kpi-box'>
+        <div class='kpi-title'>Tasa de Retención ({categoria_seleccionada})</div>
+        <div class='kpi-value'>{kpis['retencion_cat']:.2f} %</div>
+        <div class='kpi-delta {"up" if kpis['retencion_cat'] >= 3 else "down"}'>
+            {"⬆ Retención superior al ideal" if kpis['retencion_cat'] >= 3 else "⬇ Retención inferior al ideal"}
         </div>
     </div>
-    """, unsafe_allow_html=True)
+    <div class='kpi-box'>
+        <div class='kpi-title'>{kpis['titulo_kpi']}</div>
+        <div class='kpi-value'>{kpis['promedio_filtrado']}</div>
+        <div class='kpi-delta {"up" if kpis['promedio_filtrado'] < 7 else "down"}'>
+            {"Ideal < 7 días" if kpis['promedio_filtrado'] < 7 else "Excede lo ideal (> 7 días)"}
+        </div>
+    </div>
+    <div class='kpi-box'>
+        <div class='kpi-title'>Entregas Rápidas en Alto Volumen</div>
+        <div class='kpi-value'>{kpis['porcentaje_rapidas']:.2f} %</div>
+        <div class='kpi-delta up'>Volumen alto entregado ≤ 7 días</div>
+    </div>
+    <div class='kpi-box'>
+        <div class='kpi-title'>Top Categoría en {estado_seleccionado}</div>
+        <div class='kpi-value kpi-categoria'>{kpis['top_categoria']}</div>
+        <div class='kpi-delta up'>{kpis['ventas_top']} ventas</div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
     
-    # === Visualizaciones Estilizadas ===
-    st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
-    st.markdown('<h3 class="visual-title">Visualizaciones Generales</h3>', unsafe_allow_html=True)
+    # === FILA: Distribución de Entregas + Top Categorías ===
+    col1, col2 = st.columns([0.8,1])
 
-    # === Gráficas: Retención + Distribución ===
-    col1, col2 = st.columns(2)
-
+    # Gráfica de Distribución de Entregas
     with col1:
-        fig_retencion = grafica_barra_horizontal_retencion(kpis['retencion_cat'], kpis['no_retenidos_cat'])
-        html_retencion = fig_retencion.to_html(full_html=False, include_plotlyjs='cdn')
-
-        components.html(f"""
-            <div style="
-                box-shadow: 0px 12px 30px rgba(0, 0, 0, 0.4);
-                border-radius: 16px;
-                padding: 10px;
-                background-color: white;
-                width: fit-content;
-                margin: auto;
-            ">
-                {html_retencion}
-            </div>
-        """, height=380)
-
-    with col2:
         fig_linea = mostrar_linea_distribucion_entregas(kpis["dias_filtrados"], kpis["rango"])
         html_linea = fig_linea.to_html(full_html=False, include_plotlyjs='cdn')
-
         components.html(f"""
             <div style="
                 box-shadow: 0px 12px 30px rgba(0, 0, 0, 0.4);
                 border-radius: 16px;
                 padding: 10px 10px 20px 10px;
                 background-color: white;
-                width: fit-content;
+                width: 100%;
                 margin: auto;
             ">
                 <div style="
@@ -191,44 +174,10 @@ def vista_inicio():
                 </div>
                 {html_linea}
             </div>
-        """, height=350)
+        """, height=450)
 
-    # =======================
-    # SEGUNDA FILA: Heatmap + Top 5
-    # =======================
-    col3, col4 = st.columns(2)
-
-    with col3:
-        fig_heatmap = mostrar_scatter_entregas_rapidas(df_estado)
-
-        fig_heatmap.update_layout(
-            title=dict(
-                text="Entregas Rápidas por Volumen",
-                x=0.5,
-                font=dict(size=18, color="black")
-            ),
-            paper_bgcolor='white',
-            plot_bgcolor='white',
-            hoverlabel=dict(
-                bgcolor="white",
-                font_size=14,
-                font_family="Arial"
-            )
-        )
-
-        html_heatmap = fig_heatmap.to_html(full_html=False, include_plotlyjs='cdn')
-        components.html(f"""
-        <div style="
-            box-shadow: 0px 12px 30px rgba(0, 0, 0, 0.4);
-            border-radius: 16px;
-            padding: 10px;
-            background-color: white;
-        ">
-            {html_heatmap}
-        </div>
-    """, height=500)
-        
-    with col4:
+    # Gráfica de Top Categorías
+    with col2:
         top5 = df_estado['categoria_nombre_producto'].value_counts().head(5).reset_index()
         top5.columns = ['Categoría', 'Ventas']
 
@@ -243,8 +192,6 @@ def vista_inicio():
         fig_top5.update_traces(
             marker_line=dict(color='black', width=1.5),
             hovertemplate='<b>%{x}</b><br>Ventas: %{y}<extra></extra>',
-            #text=top5['Ventas'],  # ✅ mostrar valores arriba
-            #textposition="outside"
         )
 
         fig_top5.update_layout(
@@ -254,9 +201,9 @@ def vista_inicio():
             paper_bgcolor='white',
             plot_bgcolor='white',
             showlegend=False,
-            height=420,
-            width=500,  # ✅ más ancho
-            margin=dict(t=40, b=120, l=60, r=20),
+            height=300,
+            #width=600, 
+            margin=dict(t=40, b=120, l=60, r=100),
             xaxis=dict(
                 tickangle=-20,
                 tickfont=dict(size=11),
@@ -274,24 +221,24 @@ def vista_inicio():
 
         html_top5 = fig_top5.to_html(full_html=False, include_plotlyjs='cdn')
         components.html(f"""
-        <div style="
-            box-shadow: 0px 12px 30px rgba(0, 0, 0, 0.4);
-            border-radius: 16px;
-            padding: 10px;
-            background-color: white;
-            width: fit-content;
-            margin: auto;
-        ">
             <div style="
-                font-size: 18px;
-                font-weight: 600;
-                text-align: center;
-                color: black;
-                margin-bottom: 10px;
-                font-family: Arial, sans-serif;
+                box-shadow: 0px 12px 30px rgba(0, 0, 0, 0.4);
+                border-radius: 16px;
+                padding: 10px;
+                background-color: white;
+                width: 90%;
+                margin: auto;
             ">
-                Top Categorías en {estado_seleccionado}
+                <div style="
+                    font-size: 18px;
+                    font-weight: 600;
+                    text-align: center;
+                    color: black;
+                    margin-bottom: 10px;
+                    font-family: Arial, sans-serif;
+                ">
+                    Top Categorías en {estado_seleccionado}
+                </div>
+                {html_top5}
             </div>
-            {html_top5}
-        </div>
-        """, height=490)
+        """, height=600)
