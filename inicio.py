@@ -65,57 +65,52 @@ def cargar_datos():
     except Exception as e:
         return None, str(e)
 
-def aplicar_filtros(df, categoria, estado, tipo_entrega):
+def aplicar_filtros(df, categoria, region, tipo_entrega, fecha_periodo):
+    if fecha_periodo is not None and fecha_periodo != 'Todos':
+        df = df[df['periodo'].astype(str) == fecha_periodo]
+
     df_filtrado = df if categoria == 'Todos' else df[df['categoria_de_productos'] == categoria]
-    df_estado = df_filtrado if estado == 'Todos' else df_filtrado[df_filtrado['estado_del_cliente'] == estado]
 
-    # Copia para evitar errores al modificar columnas
-    df_estado = df_estado.copy()
-
-    # Asegurar formato numérico
-    df_estado['tiempo_total_entrega_dias'] = pd.to_numeric(df_estado['tiempo_total_entrega_dias'], errors='coerce')
-
-    # Aplicar tipo_entrega
-    if tipo_entrega == "Prime (0–3 días)":
-        df_estado = df_estado[df_estado['tiempo_total_entrega_dias'].between(0, 3)]
-    elif tipo_entrega == "Express (4–7 días)":
-        df_estado = df_estado[df_estado['tiempo_total_entrega_dias'].between(4, 7)]
-    elif tipo_entrega == "Regular (8–30 días)":
-        df_estado = df_estado[df_estado['tiempo_total_entrega_dias'].between(8, 30)]
+    if 'region' in df_filtrado.columns:
+        df_region = df_filtrado if region == 'Todos' else df_filtrado[df_filtrado['region'] == region]
     else:
-        df_estado = df_estado[df_estado['tiempo_total_entrega_dias'].between(0, 30)]
+        df_region = df_filtrado.copy()
 
-    return df_filtrado, df_estado
+    df_region = df_region.copy()
+    df_region['tiempo_total_entrega_dias'] = pd.to_numeric(df_region['tiempo_total_entrega_dias'], errors='coerce')
 
-def calcular_kpis(df, df_filtrado, df_estado, tipo_entrega, categoria_seleccionada, estado_seleccionado):
-    # Asegurar que las columnas clave estén en formato correcto
-    df_estado['volumen'] = pd.to_numeric(df_estado['volumen'], errors='coerce')
-    df_estado['tiempo_total_entrega_dias'] = pd.to_numeric(df_estado['tiempo_total_entrega_dias'], errors='coerce')
+    if tipo_entrega == "Prime (0–3 días)":
+        df_region = df_region[df_region['tiempo_total_entrega_dias'].between(0, 3)]
+    elif tipo_entrega == "Express (4–7 días)":
+        df_region = df_region[df_region['tiempo_total_entrega_dias'].between(4, 7)]
+    elif tipo_entrega == "Regular (8–30 días)":
+        df_region = df_region[df_region['tiempo_total_entrega_dias'].between(8, 30)]
+    else:
+        df_region = df_region[df_region['tiempo_total_entrega_dias'].between(0, 30)]
 
-    # Clasificar tipo de entrega
-    df_estado['tipo_entrega'] = pd.cut(
-        df_estado['tiempo_total_entrega_dias'],
+    return df_filtrado, df_region
+
+def calcular_kpis(df, df_filtrado, df_region, tipo_entrega, categoria_seleccionada, region_seleccionada):
+    df_region['volumen'] = pd.to_numeric(df_region['volumen'], errors='coerce')
+    df_region['tiempo_total_entrega_dias'] = pd.to_numeric(df_region['tiempo_total_entrega_dias'], errors='coerce')
+
+    df_region['tipo_entrega'] = pd.cut(
+        df_region['tiempo_total_entrega_dias'],
         bins=[-1, 3, 7, float('inf')],
         labels=["Prime", "Express", "Regular"]
     )
 
-    # Calcular volumen promedio según tipo de entrega y categoría
     volumen_promedio = 0
-    if categoria_seleccionada != 'Todos':
-        df_categoria = df_estado[df_estado['categoria_de_productos'] == categoria_seleccionada]
-    else:
-        df_categoria = df_estado
+    df_categoria = df_region if categoria_seleccionada == 'Todos' else df_region[df_region['categoria_de_productos'] == categoria_seleccionada]
+    tipo = tipo_entrega.split()[0] if tipo_entrega != "De (0-30 días)" else None
 
-    if tipo_entrega in ["Prime (0–3 días)", "Express (4–7 días)", "Regular (8–30 días)"]:
-        tipo = tipo_entrega.split()[0]  # "Prime", "Express", "Regular"
+    if tipo:
         df_tipo = df_categoria[df_categoria['tipo_entrega'] == tipo]
         volumen_promedio = df_tipo['volumen'].mean()
     else:
         volumen_promedio = df_categoria['volumen'].mean()
 
     volumen_promedio = round(volumen_promedio, 2) if not pd.isna(volumen_promedio) else 0
-
-    # === KPI adicionales se mantienen ===
 
     periodos_cat = df_filtrado.groupby('id_único_de_cliente')['periodo'].nunique()
     retenidos_cat = periodos_cat[periodos_cat > 1].count()
@@ -142,21 +137,16 @@ def calcular_kpis(df, df_filtrado, df_estado, tipo_entrega, categoria_selecciona
         rango = range(0, 31)
 
     promedio_filtrado = round(dias_filtrados.mean()) if not dias_filtrados.empty else 0
-    
-    # Usar solo el filtro por estado
-    df_estado_top = df if estado_seleccionado == 'Todos' else df[df['estado_del_cliente'] == estado_seleccionado]
-    top5_estado = df_estado_top['categoria_de_productos'].value_counts().head(5)
-    top_categoria = top5_estado.index[0] if not top5_estado.empty else "—"
-    ventas_top = int(top5_estado.iloc[0]) if not top5_estado.empty else 0
 
-    #top5 = df_estado['categoria_nombre_producto'].value_counts().head(5)
-    #top_categoria = top5.index[0] if not top5.empty else "—"
-    #ventas_top = int(top5.iloc[0]) if not top5.empty else 0
+    df_region_top = df if region_seleccionada == 'Todos' else df[df['region'] == region_seleccionada]
+    top5_region = df_region_top['categoria_de_productos'].value_counts().head(5)
+    top_categoria = top5_region.index[0] if not top5_region.empty else "—"
+    ventas_top = int(top5_region.iloc[0]) if not top5_region.empty else 0
 
     ahorro_prime = ahorro_express = None
-    if 'valor_total' in df_estado.columns and 'tiempo_total_entrega_dias' in df_estado.columns:
-        df_estado['valor_total'] = pd.to_numeric(df_estado['valor_total'], errors='coerce')
-        valor_promedio = df_estado.groupby("tipo_entrega")["valor_total"].mean()
+    if 'valor_total' in df_region.columns and 'tiempo_total_entrega_dias' in df_region.columns:
+        df_region['valor_total'] = pd.to_numeric(df_region['valor_total'], errors='coerce')
+        valor_promedio = df_region.groupby("tipo_entrega")["valor_total"].mean()
         baseline = valor_promedio.get("Regular", None)
 
         if baseline and baseline > 0:
@@ -177,12 +167,11 @@ def calcular_kpis(df, df_filtrado, df_estado, tipo_entrega, categoria_selecciona
         "rango": rango
     }
 
-def obtener_top5_por_estado(df, estado_seleccionado):
-    df_estado = df if estado_seleccionado == 'Todos' else df[df['estado_del_cliente'] == estado_seleccionado]
-    top5 = df_estado['categoria_de_productos'].value_counts().head(5).reset_index()
+def obtener_top5_por_region(df, region_seleccionada):
+    df_region = df if region_seleccionada == 'Todos' else df[df['region'] == region_seleccionada]
+    top5 = df_region['categoria_de_productos'].value_counts().head(5).reset_index()
     top5.columns = ['Categoría', 'Ventas']
     return top5
-
 
 def mostrar_dispersion_volumen_vs_flete_filtrado(df, categoria, tipo_entrega):
     # === Filtrar solo por categoría ===
