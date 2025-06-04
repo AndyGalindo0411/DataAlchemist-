@@ -1,6 +1,6 @@
 import streamlit as st  # type: ignore
 
-# ✅ IMPORTACIÓN CORRECTA DEL FRONTEND
+# IMPORTACIÓN CORRECTA DEL FRONTEND
 from inicioFront import vista_inicio
 from datos import vista_exploracion
 from visualizacion import vista_visualizacion
