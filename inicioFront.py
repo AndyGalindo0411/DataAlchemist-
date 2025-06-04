@@ -75,6 +75,17 @@ def vista_inicio():
         word-wrap: break-word;
         white-space: normal;
     }
+    .kpi-ventas-texto {
+    font-size: 16px;      /* o prueba con 15px */
+    font-weight: 600;
+    margin-top: -10px;
+    color: green;
+    }
+    .kpi-categoria-ajustada {
+    font-size: 18px;    /* o 20px si quieres más énfasis */
+    font-weight: 700;
+    color: black;
+    }
     .kpi-box:hover {
         transform: translateY(-6px) scale(1.02);
         box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
@@ -103,7 +114,7 @@ def vista_inicio():
     st.session_state["df_upd"] = df
 
     with st.sidebar.expander("Filtros", expanded=True):
-        categorias = ['Todos'] + sorted(df['categoria_nombre_producto'].dropna().unique().tolist())
+        categorias = ['Todos'] + sorted(df['categoria_de_productos'].dropna().unique().tolist())
         categoria_seleccionada = st.selectbox("Categoría", categorias)
 
         estados = ['Todos'] + sorted(df['estado_del_cliente'].dropna().unique().tolist())
@@ -115,6 +126,17 @@ def vista_inicio():
             "Express (4–7 días)",
             "Regular (8–30 días)"
         ])
+
+        # === NUEVOS FILTROS SOLICITADOS ===
+        regiones = ['Todos'] + sorted(df['region'].dropna().unique().tolist())
+        region_seleccionada = st.selectbox("Región", regiones)
+
+        # Crear selector de fecha en formato Mes - Año
+        df['orden_compra_timestamp_fecha'] = pd.to_datetime(df['orden_compra_timestamp_fecha'], errors='coerce')
+        fechas_unicas = df['orden_compra_timestamp_fecha'].dropna().dt.to_period('M').drop_duplicates().sort_values()
+        fechas_formato = fechas_unicas.astype(str).str.replace('-', ' - ', regex=False)
+
+        fecha_seleccionada = st.selectbox("Fecha (Mes - Año)", fechas_formato.tolist())
 
     df_filtrado, df_estado = aplicar_filtros(df, categoria_seleccionada, estado_seleccionado, tipo_entrega)
     kpis = calcular_kpis(df, df_filtrado, df_estado, tipo_entrega, categoria_seleccionada, estado_seleccionado)
@@ -144,8 +166,9 @@ def vista_inicio():
     </div>
     <div class='kpi-box'>
         <div class='kpi-title'>Top Categoría en {estado_seleccionado}</div>
-        <div class='kpi-value kpi-categoria'>{kpis['top_categoria']}</div>
-        <div class='kpi-delta up'>{kpis['ventas_top']} ventas</div>
+        <div class='kpi-value up'>{kpis['ventas_top']}</div>
+        <div class='kpi-ventas-texto'>ventas</div>
+        <div class='kpi-categoria-ajustada'>{kpis['top_categoria']}</div>
     </div>
 </div>
 """, unsafe_allow_html=True)
