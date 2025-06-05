@@ -5,7 +5,7 @@ from inicioFront import vista_inicio
 from datos import vista_exploracion
 from prediccion import vista_prediccion
 from configuracion import vista_configuracion
-
+from introduccion import vista_introduccion
 
 # === Configuración general ===
 st.set_page_config(page_title="Data Alchemist", layout="wide")
@@ -36,6 +36,8 @@ st.sidebar.markdown("### MENÚ")
 
 if st.sidebar.button("Inicio"):
     st.session_state.seccion_activa = "Inicio"
+if st.sidebar.button("Danu Shop"):
+    st.session_state.seccion_activa = "Danu Shop"
 if st.sidebar.button("Exploración de Datos"):
     st.session_state.seccion_activa = "Exploración de Datos"
 if st.sidebar.button("Predicción"):
@@ -48,6 +50,8 @@ st.sidebar.markdown("<div style='flex-grow: 1; height: 40px;'></div>", unsafe_al
 
 # === Renderizar vista activa ===
 if st.session_state.seccion_activa == "Inicio":
+    vista_introduccion()
+elif st.session_state.seccion_activa == "Danu Shop":
     vista_inicio()
 elif st.session_state.seccion_activa == "Exploración de Datos":
     vista_exploracion()
