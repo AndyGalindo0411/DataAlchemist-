@@ -14,42 +14,35 @@ def vista_introduccion():
     if slide == 1:
         st.subheader("¿Qué es Data Alchemist?")
         st.write(
-            "Es una plataforma diseñada para transformar datos en decisiones.\n"
-            "Conecta visualizaciones, modelos predictivos y análisis exploratorio en un solo lugar.\n"
-            "Ideal para proyectos logísticos, comerciales o académicos."
+            st.image("imagenes/1.png")
         )
 
     elif slide == 2:
         st.subheader("¿Qué puedo hacer?")
         st.write(
-            "- Explorar datos con filtros dinámicos\n"
-            "- Calcular métricas clave como tasa de retención o demoras\n"
-            "- Visualizar ventas por región, tipo de envío o categoría\n"
-            "- Detectar patrones para optimizar decisiones"
+            st.image("imagenes/2.png")
+
         )
 
     elif slide == 3:
         st.subheader("¿Qué incluye la parte de predicción?")
         st.write(
-            "Utiliza modelos de machine learning para predecir:\n"
-            "- El tipo de entrega de un pedido\n"
-            "- El impacto del volumen o del estado en los tiempos de envío\n"
-            "- Las categorías con mayor rotación o problemas logísticos"
+            st.image("imagenes/3.png")
+
         )
 
     elif slide == 4:
         st.subheader("¿Cómo empezar?")
         st.write(
-            "1. Ve al menú lateral y elige la opción Exploración de Datos\n"
-            "2. Filtra por estado, volumen o tipo de envío\n"
-            "3. Interpreta las gráficas y guarda tus insights\n"
-            "4. Usa la sección de Predicción para anticiparte a problemas"
+            st.image("imagenes/4.png")
+
         )
 
     elif slide == 5:
         st.subheader("Quinta sección")
         st.write(
-            "Aquí puedes agregar contenido adicional, instrucciones avanzadas, créditos u otra información relevante."
+            st.image("imagenes/5.png")
+
         )
 
     # --- Navegación con flechas (condicional) ---
