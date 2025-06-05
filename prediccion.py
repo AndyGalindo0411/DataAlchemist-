@@ -46,7 +46,7 @@ def vista_prediccion():
     st.markdown("""
     <style>
     .kpi-box {
-        background-color: #f8f9fa;
+        background-color: #FFFFFF;
         border-radius: 16px;
         padding: 2rem;
         width: 100%;

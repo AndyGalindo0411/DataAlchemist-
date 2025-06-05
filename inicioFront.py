@@ -79,7 +79,6 @@ def vista_inicio():
     font-size: 16px;      /* o prueba con 15px */
     font-weight: 600;
     margin-top: -10px;
-    color: green;
     }
     .kpi-categoria-ajustada {
     font-size: 18px;    /* o 20px si quieres más énfasis */
@@ -180,7 +179,7 @@ def vista_inicio():
     </div>
     <div class='kpi-box'>
         <div class='kpi-title'>Top Categoría en {region_seleccionada}</div>
-        <div class='kpi-value up'>{kpis['ventas_top']}</div>
+        <div class='kpi-value'>{kpis['ventas_top']}</div>
         <div class='kpi-ventas-texto'>ventas</div>
         <div class='kpi-categoria-ajustada'>{kpis['top_categoria']}</div>
     </div>
