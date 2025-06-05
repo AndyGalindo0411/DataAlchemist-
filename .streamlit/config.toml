@@ -1,5 +1,5 @@
 [theme]
-base = "light"                         # Modo claro
+base = "light"                        # Modo claro
 primaryColor = "#020873"              # Azul oscuro (para sliders, radio points, hovers)
 secondaryBackgroundColor = "#FFFFFF"  # Fondo secundario sidebar
 textColor = "#000000"                 # Texto negro

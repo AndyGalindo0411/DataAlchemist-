@@ -167,9 +167,19 @@ def calcular_kpis(df, df_filtrado, df_region, tipo_entrega, categoria_selecciona
         "rango": rango
     }
 
-def obtener_top5_por_region(df, region_seleccionada):
-    df_region = df if region_seleccionada == 'Todos' else df[df['region'] == region_seleccionada]
-    top5 = df_region['categoria_de_productos'].value_counts().head(5).reset_index()
+def obtener_top5_top_categorias(df, region_seleccionada, fecha_periodo):
+    df_filtrado = df.copy()
+
+    # Aplicar filtro de fecha si se selecciona
+    if fecha_periodo is not None and fecha_periodo != 'Todos':
+        df_filtrado = df_filtrado[df_filtrado['periodo'].astype(str) == fecha_periodo]
+
+    # Aplicar filtro de región si se selecciona
+    if region_seleccionada != 'Todos':
+        df_filtrado = df_filtrado[df_filtrado['region'] == region_seleccionada]
+
+    # Calcular top 5 categorías
+    top5 = df_filtrado['categoria_de_productos'].value_counts().head(5).reset_index()
     top5.columns = ['Categoría', 'Ventas']
     return top5
 
