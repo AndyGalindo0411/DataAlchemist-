@@ -136,7 +136,7 @@ def calcular_kpis(df, df_filtrado, df_region, tipo_entrega, categoria_selecciona
         titulo_kpi = "Días Promedio (todos)"
         rango = range(0, 31)
 
-    promedio_filtrado = round(dias_filtrados.mean()) if not dias_filtrados.empty else 0
+    promedio_filtrado = round(dias_filtrados.median()) if not dias_filtrados.empty else 0
 
     df_region_top = df if region_seleccionada == 'Todos' else df[df['region'] == region_seleccionada]
     top5_region = df_region_top['categoria_de_productos'].value_counts().head(5)
