@@ -3,7 +3,7 @@ import streamlit as st  # type: ignore
 # ✅ IMPORTACIÓN CORRECTA DEL FRONTEND
 from inicioFront import vista_inicio
 from datos import vista_exploracion
-from prediccion import vista_prediccion
+from prediccionFront import vista_prediccion
 from configuracion import vista_configuracion
 from introduccion import vista_introduccion
 
