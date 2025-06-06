@@ -39,9 +39,9 @@ def vista_inicio():
     .kpi-box {
         background-color: #f8f9fa;
         border-radius: 16px;
-        padding: 2rem 1.5rem;
+        padding: 1.2rem 1rem;
         width: 230px;
-        height: 200px;
+        height: 210px;
         text-align: center;
         display: flex;
         flex-direction: column;
@@ -216,7 +216,7 @@ def vista_inicio():
         plot_bgcolor='white',
         showlegend=False,
         height=250,   # Igual que distribución
-        width=600,    # Ajustado al tamaño izquierdo
+        width=700,    # Ajustado al tamaño izquierdo
         margin=dict(t=0, b=80, l=100, r=60),
         xaxis=dict(tickangle=-20, tickfont=dict(size=11), automargin=True),
         yaxis=dict(tickfont=dict(size=12)),
@@ -239,20 +239,22 @@ def vista_inicio():
 <div style="
     box-shadow: 0px 12px 30px rgba(0, 0, 0, 0.4);
     border-radius: 16px;
-    padding: 15px;
+    padding: 20px;
     background-color: white;
     width: 100%;
-    max-width: 1200px;
+    max-width: 1300px;
     margin: auto;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 30px;
+    overflow: hidden;
 ">
 
-    <!-- FILA SUPERIOR: Distribución y Top Categorías -->
-    <div style="display: flex; flex-direction: row; gap: -100px;">
-        <!-- IZQUIERDA: Distribución -->
-        <div style="flex: 1;">
+    <!-- FILA SUPERIOR: Top Categorías y Volumen vs Costo de Flete -->
+    <div style="display: flex; flex-direction: row; justify-content: space-between; gap: 30px;">
+
+        <!-- IZQUIERDA: Top Categorías -->
+        <div style="flex: 1; max-width: 48%;">
             <div style="
                 font-size: 18px;
                 font-weight: 600;
@@ -260,42 +262,36 @@ def vista_inicio():
                 color: black;
                 margin-bottom: 10px;
                 font-family: Arial, sans-serif;
-            ">Distribución de Entregas</div>
-            {html_linea}
+            ">{titulo_top}</div>
+            {html_top5}
         </div>
 
-        <!-- DERECHA: Top Categorías -->
-        <div style="flex: 2;">
+        <!-- DERECHA: Volumen vs Costo de Flete -->
+        <div style="flex: 1; max-width: 48%;">
             <div style="
                 font-size: 18px;
                 font-weight: 600;
                 text-align: center;
                 color: black;
-                margin-bottom: 30px;
+                margin-bottom: 10px;
                 font-family: Arial, sans-serif;
-            ">{titulo_top}</div>
-            {html_top5}
+            ">Volumen vs Costo de Flete</div>
+            {html_dispersion}
         </div>
     </div>
 
-    <!-- FILA INFERIOR: Volumen vs Costo de Flete alineada con el ancho de Top Categorías -->
-    <div style="width: 100%; margin: auto;">
+    <!-- FILA INFERIOR: Distribución de Entregas -->
+    <div style="width: 100%; margin-top: -10px;">
         <div style="
             font-size: 18px;
             font-weight: 600;
             text-align: center;
             color: black;
-            margin-bottom: 5px;
+            margin-bottom: 10px;
             font-family: Arial, sans-serif;
-    ">Volumen vs Costo de Flete</div>
-    <style>
-        .js-plotly-plot .main-svg .infolayer .gtitle {{
-            display: none !important;
-        }}
-    </style>
-    {html_dispersion}
-</div>
-
+        ">Distribución de Entregas</div>
+        {html_linea}
+    </div>
 
 </div>
-""", height=1050)
+""", height=595, scrolling=False)

@@ -16,14 +16,14 @@ def mostrar_linea_distribucion_entregas(dias_filtrados, rango):
         y=conteo_por_dia.values,
         mode="lines+markers",
         line=dict(color="#040959", width=3),
-        fill='tozeroy',
+        fill=None,
         marker=dict(size=6),
         hovertemplate="Día %{x}<br>Cantidad: %{y}<extra></extra>"
     ))
 
     fig.update_layout(
-        height=300,
-        width=550,  # ⬅️ más compacto para que no se pierdan etiquetas
+        height=210,#Modifica para hacer la gráfica más alta o más baja 
+        width=1330,  # ⬅️ más compacto para que no se pierdan etiquetas
         margin=dict(t=30, b=80, l=60, r=30),  # ⬅️ más margen inferior para etiquetas
         template="simple_white",
         xaxis=dict(
@@ -220,7 +220,8 @@ def mostrar_dispersion_volumen_vs_flete_filtrado(df, categoria, tipo_entrega):
     fig.update_traces(marker=dict(color='rgba(4, 9, 89, 0.7)'), showlegend=False)
 
     fig.update_layout(
-        height=400,
+        height=250,
+        width=600,  # ⬅️ cambia para hacerla más ancha
         margin=dict(t=0, b=80, l=60, r=30),
         plot_bgcolor="white",
         paper_bgcolor="white",
