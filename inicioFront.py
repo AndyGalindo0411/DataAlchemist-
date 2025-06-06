@@ -11,8 +11,6 @@ from inicio import obtener_top5_top_categorias
 from inicio import mostrar_linea_distribucion_entregas
 from inicio import mostrar_dispersion_volumen_vs_flete_filtrado  # ✅ Asegúrate de tener esto
 
-
-
 def vista_inicio():
     # === Estilos personalizados mejorados ===
     st.markdown("""
@@ -98,13 +96,6 @@ def vista_inicio():
     </style>
     """, unsafe_allow_html=True)
 
-    st.markdown("""
-<div style='text-align: left; padding-bottom: 1rem;'>
-    <span style='font-size: 40px; font-weight: 900;'>Danu Shop</span>
-    <span style='font-size: 24px; font-weight: 500; color: #444;'> - Panel de Indicadores Clave y Estratégicos</span>
-</div>
-""", unsafe_allow_html=True)
-
     df, error = cargar_datos()
     if error:
         st.warning(error)
@@ -154,10 +145,80 @@ def vista_inicio():
             region_seleccionada
         )
 
+    # === Mostrar título y filtros en la misma línea ===
+    filtros_activos = []
+
+    if categoria_seleccionada != "Todos":
+        filtros_activos.append(f"Categoría: {categoria_seleccionada}")
+    if tipo_entrega != "De (0-30 días)":
+        filtros_activos.append(f"Entrega: {tipo_entrega}")
+    if region_seleccionada != "Todos":
+        filtros_activos.append(f"Región: {region_seleccionada}")
+    if fecha_periodo is not None:
+        filtros_activos.append(f"Fecha: {fecha_seleccionada}")
+
+    st.markdown("""
+    <style>
+    .encabezado-con-filtros {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+    }
+    .titulo-linea {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+    }
+    .titulo-principal {
+        font-size: 80px;
+        font-weight: 900;
+        color: black;
+        margin: 0;
+    }
+    .subtitulo {
+        font-size: 40px;
+        font-weight: 800;
+        color: #444;
+        margin: 0;
+    }
+    .chip-container {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 0.2rem;
+    }
+    .chip {
+        background-color: #white; /* Fondo azul claro */
+        border-radius: 30px;
+        padding: 6px 14px;
+        font-size: 14px;
+        font-weight: 500;
+        color: #040959; /* Color de Texto*/
+        border: 2px solid #040959;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # === Render del bloque con título y chips ===
+    st.markdown(f"""
+    <div class="encabezado-con-filtros">
+        <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 1.5rem;">
+            <span style="font-size: 30px; font-weight: 900; color: black;">Danu Shop</span>
+            <span style="font-size: 20px; font-weight: 500; color: #444;">- Panel de Indicadores Clave y Estratégicos</span>
+        </div>
+        {"<div class='chip-container'>" + "".join([f"<div class='chip'>{filtro}</div>" for filtro in filtros_activos]) + "</div>" if filtros_activos else ""}
+    </div>  
+    """, unsafe_allow_html=True)
+
     st.markdown(f"""
 <div class='kpi-container'>
     <div class='kpi-box'>
-        <div class='kpi-title'>Tasa de Retención ({categoria_seleccionada})</div>
+        <div class='kpi-title'>Tasa de Retención</div>
         <div class='kpi-value'>{kpis['retencion_cat']:.2f} %</div>
         <div class='kpi-delta {"up" if kpis['retencion_cat'] >= 3 else "down"}'>
             {"⬆ Retención superior al ideal" if kpis['retencion_cat'] >= 3 else "⬇ Retención inferior al ideal"}
@@ -174,14 +235,15 @@ def vista_inicio():
         <div class='kpi-title'>Volumen Promedio</div>
         <div class='kpi-value'>{int(kpis['volumen_promedio']):,} cm³</div>
         <div class='kpi-delta {"up" if kpis['volumen_promedio'] >= 0 else "down"}'>
-            Volumen medio en {categoria_seleccionada}
+            Volumen medio
         </div>
     </div>
     <div class='kpi-box'>
-        <div class='kpi-title'>Top Categoría en {region_seleccionada}</div>
-        <div class='kpi-value'>{kpis['ventas_top']}</div>
-        <div class='kpi-ventas-texto'>ventas</div>
-        <div class='kpi-categoria-ajustada'>{kpis['top_categoria']}</div>
+        <div class='kpi-title'>Núm de Pedidos</div>
+        <div class='kpi-value'>
+            <span style="font-weight:900; font-size:32px;">{kpis['num_pedidos']:,}</span>
+            <span style="font-size:18px; font-weight:600; margin-left:8px;">ventas</span>
+    </div>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -195,7 +257,7 @@ def vista_inicio():
     fig_dispersion = mostrar_dispersion_volumen_vs_flete_filtrado(df, categoria_seleccionada, tipo_entrega)  # type: ignore
     html_dispersion = fig_dispersion.to_html(full_html=False, include_plotlyjs='cdn')
 
-    top5 = obtener_top5_top_categorias(df, region_seleccionada, fecha_periodo)
+    top5 = obtener_top5_top_categorias(df, region_seleccionada, fecha_periodo, tipo_entrega)
     top5.columns = ['Categoría', 'Ventas']
     fig_top5 = px.bar(
         top5,
@@ -225,13 +287,13 @@ def vista_inicio():
 
     # Antes del HTML
     if region_seleccionada != 'Todos' and fecha_periodo != 'Todos':
-        titulo_top = f"Top Categorías en {region_seleccionada} - {fecha_seleccionada}"
+        titulo_top = f"Top Categorías"
     elif region_seleccionada != 'Todos':
-        titulo_top = f"Top Categorías en {region_seleccionada}"
+        titulo_top = f"Top Categorías"
     elif fecha_periodo != 'Todos':
-        titulo_top = f"Top Categorías en {fecha_seleccionada}"
+        titulo_top = f"Top Categorías"
     else:
-        titulo_top = "Top Categorías (General)"
+        titulo_top = "Top Categorías"
 
     html_top5 = fig_top5.to_html(full_html=False, include_plotlyjs='cdn')
 
@@ -287,7 +349,7 @@ def vista_inicio():
             font-weight: 600;
             text-align: center;
             color: black;
-            margin-bottom: 10px;
+            margin-bottom: -2px;
             font-family: Arial, sans-serif;
         ">Distribución de Entregas</div>
         {html_linea}

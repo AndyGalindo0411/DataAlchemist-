@@ -106,19 +106,29 @@ def calcular_kpis(df, df_filtrado, df_region, tipo_entrega, categoria_selecciona
 
     if tipo:
         df_tipo = df_categoria[df_categoria['tipo_entrega'] == tipo]
-        volumen_promedio = df_tipo['volumen'].mean()
+        volumen_promedio = df_tipo['volumen'].median()
     else:
-        volumen_promedio = df_categoria['volumen'].mean()
+        volumen_promedio = df_categoria['volumen'].median()
 
     volumen_promedio = round(volumen_promedio, 2) if not pd.isna(volumen_promedio) else 0
 
-    periodos_cat = df_filtrado.groupby('id_único_de_cliente')['periodo'].nunique()
+    # === RETENCIÓN USANDO SOLO ALGUNOS FILTROS (df_filtrado) ===
+    # === RETENCIÓN USANDO SOLO ALGUNOS FILTROS (df_filtrado) ===
+    # === RETENCIÓN CONDICIONAL SEGÚN FILTROS ===
+    if categoria_seleccionada == 'Todos' and region_seleccionada == 'Todos' and tipo_entrega == 'De (0-30 días)':
+        df_retencion = df_filtrado
+    else:
+        df_retencion = df_region
+
+    periodos_cat = df_retencion.groupby('id_único_de_cliente')['periodo'].nunique()
     retenidos_cat = periodos_cat[periodos_cat > 1].count()
     totales_cat = periodos_cat.count()
     retencion_cat = (retenidos_cat / totales_cat) * 100 if totales_cat > 0 else 0
     no_retenidos_cat = 100 - retencion_cat
 
+
     dias = df_filtrado['tiempo_total_entrega_dias'].dropna()
+
     if tipo_entrega == "Prime (0–3 días)":
         dias_filtrados = dias[dias.between(0, 3)]
         titulo_kpi = "Días Promedio Prime"
@@ -133,15 +143,13 @@ def calcular_kpis(df, df_filtrado, df_region, tipo_entrega, categoria_selecciona
         rango = range(8, 31)
     else:
         dias_filtrados = dias[dias.between(0, 30)]
-        titulo_kpi = "Días Promedio (todos)"
+        titulo_kpi = "Días Promedio"
         rango = range(0, 31)
 
     promedio_filtrado = round(dias_filtrados.median()) if not dias_filtrados.empty else 0
 
-    df_region_top = df if region_seleccionada == 'Todos' else df[df['region'] == region_seleccionada]
-    top5_region = df_region_top['categoria_de_productos'].value_counts().head(5)
-    top_categoria = top5_region.index[0] if not top5_region.empty else "—"
-    ventas_top = int(top5_region.iloc[0]) if not top5_region.empty else 0
+    # Reemplazado KPI anterior por nuevo conteo de pedidos
+    num_pedidos = len(df_region)  # Nuevo KPI que cuenta pedidos después de todos los filtros
 
     ahorro_prime = ahorro_express = None
     if 'valor_total' in df_region.columns and 'tiempo_total_entrega_dias' in df_region.columns:
@@ -159,26 +167,38 @@ def calcular_kpis(df, df_filtrado, df_region, tipo_entrega, categoria_selecciona
         "no_retenidos_cat": no_retenidos_cat,
         "titulo_kpi": titulo_kpi,
         "promedio_filtrado": promedio_filtrado,
-        "top_categoria": top_categoria,
-        "ventas_top": ventas_top,
+        "num_pedidos": num_pedidos,  # ✅ NUEVO KPI
         "ahorro_prime": ahorro_prime,
         "ahorro_express": ahorro_express,
         "dias_filtrados": dias_filtrados,
         "rango": rango
     }
 
-def obtener_top5_top_categorias(df, region_seleccionada, fecha_periodo):
+def obtener_top5_top_categorias(df, region_seleccionada, fecha_periodo, tipo_entrega):
     df_filtrado = df.copy()
 
-    # Aplicar filtro de fecha si se selecciona
+    # === Aplicar filtro de fecha ===
     if fecha_periodo is not None and fecha_periodo != 'Todos':
         df_filtrado = df_filtrado[df_filtrado['periodo'].astype(str) == fecha_periodo]
 
-    # Aplicar filtro de región si se selecciona
+    # === Aplicar filtro de región ===
     if region_seleccionada != 'Todos':
         df_filtrado = df_filtrado[df_filtrado['region'] == region_seleccionada]
 
-    # Calcular top 5 categorías
+    # === Asegurar formato numérico ===
+    df_filtrado['tiempo_total_entrega_dias'] = pd.to_numeric(df_filtrado['tiempo_total_entrega_dias'], errors='coerce')
+
+    # === Aplicar filtro de tipo de entrega ===
+    if tipo_entrega == "Prime (0–3 días)":
+        df_filtrado = df_filtrado[df_filtrado['tiempo_total_entrega_dias'].between(0, 3)]
+    elif tipo_entrega == "Express (4–7 días)":
+        df_filtrado = df_filtrado[df_filtrado['tiempo_total_entrega_dias'].between(4, 7)]
+    elif tipo_entrega == "Regular (8–30 días)":
+        df_filtrado = df_filtrado[df_filtrado['tiempo_total_entrega_dias'].between(8, 30)]
+    else:
+        df_filtrado = df_filtrado[df_filtrado['tiempo_total_entrega_dias'].between(0, 30)]
+
+    # === Calcular top 5 categorías ===
     top5 = df_filtrado['categoria_de_productos'].value_counts().head(5).reset_index()
     top5.columns = ['Categoría', 'Ventas']
     return top5
@@ -188,45 +208,66 @@ def mostrar_dispersion_volumen_vs_flete_filtrado(df, categoria, tipo_entrega):
     if categoria != 'Todos':
         df = df[df['categoria_de_productos'] == categoria]
 
-    # === Asegurar formato numérico ===
-    df['tiempo_total_entrega_dias'] = pd.to_numeric(df['tiempo_total_entrega_dias'], errors='coerce')
-    df['volumen'] = pd.to_numeric(df['volumen'], errors='coerce')
-    df['costo_de_flete'] = pd.to_numeric(df['costo_de_flete'], errors='coerce')
+    # === Asegurar formato numérico para columnas relevantes ===
+    columnas_a_convertir = ['volumen', 'costo_de_flete']
+    for columna in columnas_a_convertir:
+        df[columna] = df[columna].astype(str).str.replace(',', '.', regex=False)
+        df[columna] = pd.to_numeric(df[columna], errors='coerce')
 
-    # === Filtrar por tipo de entrega ===
+    # === Clasificar tipo de entrega (Prime, Express, Regular) ===
+    df['tiempo_total_entrega_dias'] = pd.to_numeric(df['tiempo_total_entrega_dias'], errors='coerce')
+    df['tipo_entrega'] = pd.cut(
+        df['tiempo_total_entrega_dias'],
+        bins=[-1, 3, 7, 30],
+        labels=["Prime", "Express", "Regular"]
+    )
+
+    # === Filtrar por tipo_entrega (si aplica) ===
     if tipo_entrega == "Prime (0–3 días)":
-        df = df[df['tiempo_total_entrega_dias'].between(0, 3)]
+        df = df[df['tipo_entrega'] == "Prime"]
     elif tipo_entrega == "Express (4–7 días)":
-        df = df[df['tiempo_total_entrega_dias'].between(4, 7)]
+        df = df[df['tipo_entrega'] == "Express"]
     elif tipo_entrega == "Regular (8–30 días)":
-        df = df[df['tiempo_total_entrega_dias'].between(8, 30)]
+        df = df[df['tipo_entrega'] == "Regular"]
     else:
-        df = df[df['tiempo_total_entrega_dias'].between(0, 30)]
+        df = df[df['tipo_entrega'].notna()]  # Todos los tipos válidos
 
     # === Limpiar NaNs ===
     df = df.dropna(subset=['volumen', 'costo_de_flete'])
 
+    # === Crear gráfica de dispersión con color por tipo de entrega ===
     fig = px.scatter(
         df,
         x='volumen',
         y='costo_de_flete',
+        color='tipo_entrega',
+        color_discrete_map={
+            'Prime': '#000D71',    # Azul oscuro
+            'Express': "#000DBF",  # Azul medio
+            'Regular': "#0062C1"   # Azul claro
+        },
         labels={
             'volumen': 'Volumen (cm³)',
             'costo_de_flete': 'Costo de Flete ($)',
+            'tipo_entrega': 'Tipo de Entrega'
         },
         opacity=0.7
     )
 
-    fig.update_traces(marker=dict(color='rgba(4, 9, 89, 0.7)'), showlegend=False)
+    fig.update_traces(marker=dict(size=7, line=dict(width=0.5, color='black')))
 
     fig.update_layout(
         height=250,
-        width=600,  # ⬅️ cambia para hacerla más ancha
+        width=600,
         margin=dict(t=0, b=80, l=60, r=30),
         plot_bgcolor="white",
         paper_bgcolor="white",
         font=dict(family="Arial", size=12),
-        hoverlabel=dict(bgcolor="white", font_size=12, font_family="Arial")
+        hoverlabel=dict(
+            bgcolor="white",
+            font_size=12,
+            font_family="Arial"
+        )
     )
 
     return fig
