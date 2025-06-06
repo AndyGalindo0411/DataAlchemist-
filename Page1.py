@@ -8,45 +8,62 @@ from configuracion import vista_configuracion
 from introduccion import vista_introduccion
 
 # === Configuración general ===
-st.set_page_config(page_title="Data Alchemist", layout="wide")
+st.set_page_config(
+    page_title="Data Alchemist",
+    layout="wide",
+    initial_sidebar_state="expanded"  # Por defecto, sidebar abierto
+)
 
 # === Estado de navegación ===
 if "seccion_activa" not in st.session_state:
     st.session_state.seccion_activa = "Inicio"
 
-# === Sidebar ===
+# === Si estamos en Danu Shop, colapsar solo visualmente el sidebar al cargar ===
+if st.session_state.seccion_activa == "Danu Shop":
+    st.markdown("""
+        <style>
+        [data-testid="collapsedControl"] {
+            display: block !important;
+        }
+        .block-container {
+            padding-bottom: 0rem !important;
+        }
+        html, body, [data-testid="stAppViewContainer"] {
+            overflow-y: hidden !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
 
-# Espaciado arriba
-st.sidebar.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
+# === Sidebar (SIEMPRE presente, pero puede estar colapsado) ===
+with st.sidebar:
+    st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
 
-# Imagen centrada
-col1, col2, col3 = st.sidebar.columns([25, 100, 25])
-with col2:
-    st.image("Imagenes/DanuAnalitica.png", width=120)
+    col1, col2, col3 = st.columns([25, 100, 25])
+    with col2:
+        st.image("Imagenes/DanuAnalitica.png", width=120)
 
-# Espaciado entre logo y menú
-st.sidebar.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
 
-# Cargar estilos CSS
-with open("style.css", encoding="utf-8") as f:
-    st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    # Estilos
+    try:
+        with open("style.css", encoding="utf-8") as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    except FileNotFoundError:
+        pass  # No rompe si el archivo no está
 
-# Menú lateral
-st.sidebar.markdown("### MENÚ")
+    st.markdown("### MENÚ")
+    if st.button("Inicio"):
+        st.session_state.seccion_activa = "Inicio"
+    if st.button("Danu Shop"):
+        st.session_state.seccion_activa = "Danu Shop"
+    if st.button("Exploración de Datos"):
+        st.session_state.seccion_activa = "Exploración de Datos"
+    if st.button("Predicción"):
+        st.session_state.seccion_activa = "Predicción"
+    if st.button("Configuración"):
+        st.session_state.seccion_activa = "Configuración"
 
-if st.sidebar.button("Inicio"):
-    st.session_state.seccion_activa = "Inicio"
-if st.sidebar.button("Danu Shop"):
-    st.session_state.seccion_activa = "Danu Shop"
-if st.sidebar.button("Exploración de Datos"):
-    st.session_state.seccion_activa = "Exploración de Datos"
-if st.sidebar.button("Predicción"):
-    st.session_state.seccion_activa = "Predicción"
-if st.sidebar.button("Configuración"):
-    st.session_state.seccion_activa = "Configuración"
-
-# Espacio inferior en el sidebar
-st.sidebar.markdown("<div style='flex-grow: 1; height: 40px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='flex-grow: 1; height: 40px;'></div>", unsafe_allow_html=True)
 
 # === Renderizar vista activa ===
 if st.session_state.seccion_activa == "Inicio":
