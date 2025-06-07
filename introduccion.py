@@ -1,4 +1,4 @@
-import streamlit as st
+import streamlit as st # type: ignore
 
 def vista_introduccion():
     st.markdown("<h1>Introducción a Data Alchemist</h1>", unsafe_allow_html=True)
