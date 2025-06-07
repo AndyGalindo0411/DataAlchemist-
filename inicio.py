@@ -11,21 +11,33 @@ def mostrar_linea_distribucion_entregas(dias_filtrados, rango):
 
     fig = go.Figure()
 
+    # === Líneas verticales de cada punto
+    for x, y in zip(conteo_por_dia.index, conteo_por_dia.values):
+        fig.add_trace(go.Scatter(
+            x=[x, x],
+            y=[0, y],
+            mode="lines",
+            line=dict(color="#5399df", width=2),
+            showlegend=False,
+            hoverinfo="skip"
+        ))
+
+    # === Puntos (lollipop heads)
     fig.add_trace(go.Scatter(
         x=conteo_por_dia.index,
         y=conteo_por_dia.values,
-        mode="lines+markers",
-        line=dict(color="#040959", width=3),
-        fill=None,
-        marker=dict(size=6),
-        hovertemplate="Día %{x}<br>Cantidad: %{y}<extra></extra>"
+        mode="markers",
+        marker=dict(color="#263cbb", size=8, line=dict(width=1, color='#263cbb')),
+        hovertemplate="Día %{x}<br>Cantidad: %{y}<extra></extra>",
+        showlegend=False  # 👈 Esto oculta el label
     ))
 
     fig.update_layout(
-        height=210,#Modifica para hacer la gráfica más alta o más baja 
-        width=1330,  # ⬅️ más compacto para que no se pierdan etiquetas
-        margin=dict(t=30, b=80, l=60, r=30),  # ⬅️ más margen inferior para etiquetas
+        height=210,
+        width=1330,
+        margin=dict(t=30, b=80, l=60, r=30),
         template="simple_white",
+        title=None,
         xaxis=dict(
             title="Días de Entrega",
             tickmode="linear",
@@ -44,6 +56,7 @@ def mostrar_linea_distribucion_entregas(dias_filtrados, rango):
             font_family="Arial"
         )
     )
+
     return fig
 
 @st.cache_data(show_spinner="Cargando base de datos...")
@@ -242,9 +255,9 @@ def mostrar_dispersion_volumen_vs_flete_filtrado(df, categoria, tipo_entrega):
         y='costo_de_flete',
         color='tipo_entrega',
         color_discrete_map={
-            'Prime': '#000D71',    # Azul oscuro
-            'Express': "#000DBF",  # Azul medio
-            'Regular': "#0062C1"   # Azul claro
+            'Prime': "#05d721",    # Azul oscuro
+            'Express': "#dd0f98",  # Azul medio #41B6F0
+            'Regular': "#1329ee"   # Azul claro #09479E
         },
         labels={
             'volumen': 'Volumen (cm³)',

@@ -198,8 +198,8 @@ def vista_inicio():
         font-size: 14px;
         font-weight: 500;
         color: #040959; /* Color de Texto*/
-        border: 2px solid #040959;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+        border: 1px solid #040959;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
     }
     </style>
     """, unsafe_allow_html=True)
@@ -221,7 +221,7 @@ def vista_inicio():
         <div class='kpi-title'>Tasa de Retención</div>
         <div class='kpi-value'>{kpis['retencion_cat']:.2f} %</div>
         <div class='kpi-delta {"up" if kpis['retencion_cat'] >= 3 else "down"}'>
-            {"⬆ Retención superior al ideal" if kpis['retencion_cat'] >= 3 else "⬇ Retención inferior al ideal"}
+            {"⬆ Retención superior al ideal" if kpis['retencion_cat'] >= 3 else "⬇ Retencion inferior a benchmark (20%)"}
         </div>
     </div>
     <div class='kpi-box'>
@@ -242,7 +242,11 @@ def vista_inicio():
         <div class='kpi-title'>Núm de Pedidos</div>
         <div class='kpi-value'>
             <span style="font-weight:900; font-size:32px;">{kpis['num_pedidos']:,}</span>
-            <span style="font-size:18px; font-weight:600; margin-left:8px;">ventas</span>
+            <span style="font-size:18px; font-weight:600; margin-left:8px;">pedidos</span>
+        </div>
+        <div class='kpi-delta' style="margin-top: 6px;">
+            Por {categoria_seleccionada if categoria_seleccionada != 'Todos' else 'todas las categorías'}
+        </div>
     </div>
     </div>
 </div>
@@ -264,16 +268,16 @@ def vista_inicio():
         x='Categoría',
         y='Ventas',
         color='Categoría',
-        color_discrete_sequence=["#040959"] * 5
+        color_discrete_sequence=["#265cbb"] * 5
     )
     fig_top5.update_traces(
-        marker_line=dict(color='black', width=1.5),
-        hovertemplate='<b>%{x}</b><br>Ventas: %{y}<extra></extra>',
+        marker_line=dict(color='#265cbb', width=1.5),
+        hovertemplate='<b>%{x}</b><br>Pedidos: %{y}<extra></extra>',
     )
     fig_top5.update_layout(
         title=None,
         xaxis_title="Categoría",
-        yaxis_title="Ventas",
+        yaxis_title="Pedidos",
         paper_bgcolor='white',
         plot_bgcolor='white',
         showlegend=False,
