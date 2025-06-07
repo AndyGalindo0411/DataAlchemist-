@@ -1,6 +1,6 @@
 import streamlit as st  # type: ignore
 
-# ✅ IMPORTACIÓN CORRECTA DEL FRONTEND
+# ✅ IMPORTACIÓN CORRECTA DE LAS VISTAS
 from inicioFront import vista_inicio
 from datos import vista_exploracion
 from prediccionFront import vista_prediccion
@@ -11,14 +11,14 @@ from introduccion import vista_introduccion
 st.set_page_config(
     page_title="Data Alchemist",
     layout="wide",
-    initial_sidebar_state="expanded"  # Por defecto, sidebar abierto
+    initial_sidebar_state="expanded"
 )
 
-# === Estado de navegación ===
+# === Estado de navegación inicial ===
 if "seccion_activa" not in st.session_state:
     st.session_state.seccion_activa = "Inicio"
 
-# === Si estamos en Danu Shop, colapsar solo visualmente el sidebar al cargar ===
+# === Estilo exclusivo si estás en Danu Shop ===
 if st.session_state.seccion_activa == "Danu Shop":
     st.markdown("""
         <style>
@@ -34,7 +34,7 @@ if st.session_state.seccion_activa == "Danu Shop":
         </style>
     """, unsafe_allow_html=True)
 
-# === Sidebar (SIEMPRE presente, pero puede estar colapsado) ===
+# === Sidebar lateral ===
 with st.sidebar:
     st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
 
@@ -44,13 +44,14 @@ with st.sidebar:
 
     st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
 
-    # Estilos
+    # === Carga de estilos externos si existen ===
     try:
         with open("style.css", encoding="utf-8") as f:
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
     except FileNotFoundError:
-        pass  # No rompe si el archivo no está
+        pass
 
+    # === Menú lateral personalizado ===
     st.markdown("### MENÚ")
     if st.button("Inicio"):
         st.session_state.seccion_activa = "Inicio"
@@ -59,16 +60,14 @@ with st.sidebar:
     if st.button("Exploración de Datos"):
         st.session_state.seccion_activa = "Exploración de Datos"
     
-    # ❌ Botón de "Predicción" eliminado
-    # if st.button("Predicción"):
-    #     st.session_state.seccion_activa = "Predicción"
-    
+    # ❌ Botón de "Predicción" intencionalmente eliminado
+
     if st.button("Configuración"):
         st.session_state.seccion_activa = "Configuración"
 
     st.markdown("<div style='flex-grow: 1; height: 40px;'></div>", unsafe_allow_html=True)
 
-# === Renderizar vista activa ===
+# === Renderizar vista seleccionada ===
 if st.session_state.seccion_activa == "Inicio":
     vista_introduccion()
 elif st.session_state.seccion_activa == "Danu Shop":
