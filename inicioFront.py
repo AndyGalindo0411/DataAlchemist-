@@ -103,6 +103,25 @@ def vista_inicio():
 
     st.session_state["df_upd"] = df
 
+    st.markdown("""
+        <style>
+        /* Estilo visual para el botón switch */
+        [data-testid="stSidebar"] .stToggleSwitch label {
+            font-weight: 600;
+            font-size: 14px;
+            color: #040959;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+    
+    # === SWITCH para cambiar de Danu Shop a Predicción ===
+    # === SWITCH para cambiar de Danu Shop a Predicción ===
+    switch_estado = st.sidebar.toggle("Dashboard sin usar el modelo", value=False, help="Activa el switch para ver el dashboard con el modelo")
+
+    if switch_estado:
+        st.session_state.seccion_activa = "Predicción"
+        st.rerun()  # ✅ Esta es la función correcta y actual para recargar
+
     with st.sidebar.expander("Filtros", expanded=True):
         categorias = ['Todos'] + sorted(df['categoria_de_productos'].dropna().unique().tolist())
         categoria_seleccionada = st.selectbox("Categoría", categorias)
@@ -361,3 +380,4 @@ def vista_inicio():
 
 </div>
 """, height=595, scrolling=False)
+
