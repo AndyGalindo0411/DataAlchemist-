@@ -11,6 +11,43 @@ def vista_prediccion():
         st.error(error)
         return
 
+    # === Filtros desde el menú lateral ===
+    with st.sidebar.expander("Filtros - Predicción", expanded=True):
+        categorias = ['Todos'] + sorted(df_proy['categoria_de_productos'].dropna().unique().tolist())
+        categoria_pred = st.selectbox("Categoría", categorias)
+
+        regiones = ['Todos'] + sorted(df_proy['region'].dropna().unique().tolist())
+        region_pred = st.selectbox("Región", regiones)
+
+        tipo_envio = st.selectbox("Tipo de Entrega", [
+            "Todas (0-30 días)",
+            "Prime (0-3 días)",
+            "Express (4-7 días)",
+            "Regular (8-30 días)"
+        ])
+
+    # === Aplicar filtros ===
+    df_filtrado = df_proy.copy()
+
+    if categoria_pred != "Todos":
+        df_filtrado = df_filtrado[df_filtrado["categoria_de_productos"] == categoria_pred]
+
+    if region_pred != "Todos":
+        df_filtrado = df_filtrado[df_filtrado["region"] == region_pred]
+
+    if tipo_envio == "Prime (0-3 días)":
+        df_filtrado = df_filtrado[df_filtrado['entrega_simulada_dias'].between(0, 3)]
+        rango_dias = range(0, 4)
+    elif tipo_envio == "Express (4-7 días)":
+        df_filtrado = df_filtrado[df_filtrado['entrega_simulada_dias'].between(4, 7)]
+        rango_dias = range(4, 8)
+    elif tipo_envio == "Regular (8-30 días)":
+        df_filtrado = df_filtrado[df_filtrado['entrega_simulada_dias'].between(8, 30)]
+        rango_dias = range(8, 31)
+    else:
+        df_filtrado = df_filtrado[df_filtrado['entrega_simulada_dias'].between(0, 30)]
+        rango_dias = range(0, 31)
+
     # === Estilos heredados de inicioFront
     st.markdown("""
     <style>
@@ -67,16 +104,7 @@ def vista_prediccion():
     </style>
     """, unsafe_allow_html=True)
 
-    # === Encabezado y filtro
-    col_titulo, col_filtro = st.columns([3, 1])
-    with col_titulo:
-        st.markdown("<div class='titulo-principal'>Predicción de Retención de Clientes</div>", unsafe_allow_html=True)
-    with col_filtro:
-        tipo_envio = st.selectbox(
-            " ",
-            ("Todas (0-30 días)", "Prime (0-3 días)", "Express (4-7 días)", "Regular (8-30 días)"),
-            label_visibility="collapsed"
-        )
+    st.markdown("<div class='titulo-principal'>Predicción de Retención de Clientes</div>", unsafe_allow_html=True)
 
     # === Filtrado
     if tipo_envio == "Prime (0-3 días)":
@@ -113,6 +141,9 @@ def vista_prediccion():
     volumen_median = round(df_filtrado['volumen'].dropna().median(), 2)
     volumen_total_median = round(df_proy['volumen'].dropna().median(), 2)
 
+    # === Cálculo adicional
+    num_pedidos_pred = len(df_filtrado)  # 🔹 Nuevo KPI agregado
+
     # === KPIs visuales (formato heredado de inicioFront)
     st.markdown(f"""
     <div class='kpi-container'>
@@ -135,33 +166,69 @@ def vista_prediccion():
             <div class='kpi-value'>{volumen_median:,.0f} cm³</div>
             <div class='kpi-delta up'>Distribución eficiente</div>
         </div>
+        <div class='kpi-box'>
+            <div class='kpi-title'>Núm de Pedidos</div>
+            <div class='kpi-value'>
+                <span style="font-weight:900; font-size:32px;">{num_pedidos_pred:,}</span>
+                <span style="font-size:18px; font-weight:600; margin-left:8px;">pedidos</span>
+            </div>
+            <div class='kpi-delta' style="margin-top: 6px;">
+                Por todas las categorías
+            </div>
+        </div>
     </div>
     """, unsafe_allow_html=True)
+
+    # === Calcular Top 5 Categorías (por pedidos)
+    top5_pred = df_filtrado['categoria_de_productos'].value_counts().head(5).reset_index()
+    top5_pred.columns = ['Categoría', 'Pedidos']
 
     # === GRÁFICA 1: Distribución
     dias = df_filtrado['entrega_simulada_dias'].dropna()
     conteo_dias = dias.value_counts().sort_index()
     conteo_dias = pd.Series(index=rango_dias, dtype=int).fillna(0).add(conteo_dias, fill_value=0).astype(int)
 
+    # === GRÁFICA TIPO LOLLIPOP: Distribución de Entregas
     fig1 = go.Figure()
+
+    # Líneas verticales desde 0 hasta cada valor
+    for x, y in zip(conteo_dias.index, conteo_dias.values):
+        fig1.add_trace(go.Scatter(
+            x=[x, x],
+            y=[0, y],
+            mode="lines",
+            line=dict(color="#497ae9", width=2),
+            showlegend=False,
+            hoverinfo="skip"
+        ))
+
+    # Puntos arriba de cada línea
     fig1.add_trace(go.Scatter(
         x=conteo_dias.index,
         y=conteo_dias.values,
-        mode="lines+markers",
-        fill='tozeroy',
-        line=dict(color="#0811C1", width=3),
-        hovertemplate="Día %{x}<br>Cantidad: %{y}<extra></extra>"
+        mode="markers",
+        marker=dict(color="#7fb3ff", size=8, line=dict(width=1, color='#7fb3ff')),
+        hovertemplate="Día %{x}<br>Cantidad: %{y}<extra></extra>",
+        showlegend=False
     ))
+
+    # Estilo general del layout
     fig1.update_layout(
-        height=360,
-        width=700,
-        title=None,
+        height=250,
+        width=1250,
+        title=dict(text=None, x=0.5, xanchor="center", font=dict(size=18)),
         xaxis_title="Días de Entrega",
         yaxis_title="Cantidad de Entregas",
         template="simple_white",
-        margin=dict(t=0, b=100, l=100, r=100)
-        #margin=dict(t=10, b=60, l=60, r=30)
+        margin=dict(t=10, b=100, l=10, r=30),
+        hoverlabel=dict(
+            bgcolor="white",
+            font_size=12,
+            font_family="Arial"
+        ),
+        font=dict(family="Arial", size=13)
     )
+
     html_fig1 = fig1.to_html(full_html=False, include_plotlyjs='cdn')
 
     # === Clasificar tipo de entrega (Prime, Express, Regular)
@@ -187,16 +254,16 @@ def vista_prediccion():
             "tipo_entrega": "Tipo de Entrega"
         },
         color_discrete_map={
-            "Prime": "#0511F2",     # Azul oscuro
-            "Express": "#353EE9",   # Azul medio
-            "Regular": "#5A61E2"    # Azul claro
+            "Prime": "#19FF19",     # Azul oscuro
+            "Express": "#fa73db",   # Azul medio
+            "Regular": "#3cfdf9"    # Azul claro
         }
     )
 
     fig2.update_traces(marker=dict(size=7, line=dict(width=0.5, color='black')))
 
     fig2.update_layout(
-        height=360,
+        height=330,
         width=640,
         xaxis_title="Volumen",
         yaxis_title="Costo de Flete",
@@ -214,36 +281,69 @@ def vista_prediccion():
 
     html_fig2 = fig2.to_html(full_html=False, include_plotlyjs='cdn')
 
-    # === TARJETA CONTENEDORA DE GRÁFICAS (estilo inicioFront)
+    fig_top5_pred = px.bar(
+        top5_pred,
+        x='Categoría',
+        y='Pedidos',
+        color='Categoría',
+        color_discrete_sequence=["#5c8aef"] * len(top5_pred)
+    )
+
+    fig_top5_pred.update_traces(
+        marker_line=dict(color='#5c8aef', width=1.5),
+        hovertemplate='<b>%{x}</b><br>Pedidos: %{y}<extra></extra>'
+    )
+
+    fig_top5_pred.update_layout(
+        title=None,
+        xaxis_title="Categoría",
+        yaxis_title="Pedidos",
+        paper_bgcolor='white',
+        plot_bgcolor='white',
+        showlegend=False,
+        height=300,
+        width=650,
+        margin=dict(t=40, b=80, l=80, r=40),
+        xaxis=dict(tickangle=-20, tickfont=dict(size=11)),
+        yaxis=dict(tickfont=dict(size=12)),
+        font=dict(family="Arial", size=13),
+        hoverlabel=dict(bgcolor="white", font_size=13, font_family="Arial")
+    )
+
+    html_fig3 = fig_top5_pred.to_html(full_html=False, include_plotlyjs='cdn')
+
     components.html(f"""
     <div style="
         box-shadow: 0px 12px 30px rgba(0, 0, 0, 0.4);
         border-radius: 16px;
-        padding: 20px;
+        padding: 20px 20px 10px 20px;
         background-color: white;
         width: 100%;
         max-width: 1300px;
         margin: auto;
         display: flex;
-        flex-direction: row;
-        gap: 30px;
+        flex-direction: column;
+        gap: 25px;
     ">
 
-        <!-- GRÁFICA: Distribución de Entregas -->
-        <div style="flex: 1; max-width: 50%;">
+    <!-- FILA SUPERIOR: Top Categorías y Volumen vs Costo de Flete -->
+    <div style="display: flex; flex-direction: row; justify-content: space-between; gap: 30px;">
+
+        <!-- GRÁFICA: Top Categorías -->
+        <div style="flex: 1; max-width: 48%;">
             <div style="
                 font-size: 18px;
                 font-weight: 600;
                 text-align: center;
                 color: black;
-                margin-bottom: 0px;
+                margin-bottom: 10px;
                 font-family: Arial, sans-serif;
-            ">Distribución de Entregas</div>
-            {html_fig1}
+            ">Top Categorías</div>
+            {html_fig3}
         </div>
 
         <!-- GRÁFICA: Volumen vs Costo de Flete -->
-        <div style="flex: 1; max-width: 50%;">
+        <div style="flex: 1; max-width: 48%;">
             <div style="
                 font-size: 18px;
                 font-weight: 600;
@@ -255,4 +355,19 @@ def vista_prediccion():
             {html_fig2}
         </div>
     </div>
-    """, height=450, scrolling=False)
+
+    <!-- FILA INFERIOR: Distribución de Entregas centrada -->
+    <div style="width: 100%; text-align: center;">
+        <div style="
+            font-size: 18px;
+            font-weight: 600;
+            color: black;
+            margin-bottom: -2px;
+            font-family: Arial, sans-serif;
+        ">Distribución de Entregas</div>
+        {html_fig1}
+    </div>
+
+</div>
+""", height=760, scrolling=False)
+
