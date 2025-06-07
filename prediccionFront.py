@@ -26,7 +26,7 @@ def vista_prediccion():
             "Regular (8-30 días)"
         ])
 
-    # === Aplicar filtros ===
+        # === Aplicar filtros ===
     df_filtrado = df_proy.copy()
 
     if categoria_pred != "Todos":
@@ -104,21 +104,54 @@ def vista_prediccion():
     </style>
     """, unsafe_allow_html=True)
 
-    st.markdown("<div class='titulo-principal'>Predicción de Retención de Clientes</div>", unsafe_allow_html=True)
+    # === Estilo para chips de filtros
+    st.markdown("""
+    <style>
+    .encabezado-con-filtros {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+    }
+    .chip-container {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 0.2rem;
+    }
+    .chip {
+        background-color: white;
+        border-radius: 30px;
+        padding: 6px 14px;
+        font-size: 14px;
+        font-weight: 500;
+        color: #040959;
+        border: 1px solid #040959;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
-    # === Filtrado
-    if tipo_envio == "Prime (0-3 días)":
-        df_filtrado = df_proy[df_proy['entrega_simulada_dias'].between(0, 3)]
-        rango_dias = range(0, 4)
-    elif tipo_envio == "Express (4-7 días)":
-        df_filtrado = df_proy[df_proy['entrega_simulada_dias'].between(4, 7)]
-        rango_dias = range(4, 8)
-    elif tipo_envio == "Regular (8-30 días)":
-        df_filtrado = df_proy[df_proy['entrega_simulada_dias'].between(8, 30)]
-        rango_dias = range(8, 31)
-    else:
-        df_filtrado = df_proy[df_proy['entrega_simulada_dias'].between(0, 30)]
-        rango_dias = range(0, 31)
+    # === Construcción de filtros activos
+    filtros_activos = []
+    if categoria_pred != "Todos":
+        filtros_activos.append(f"Categoría: {categoria_pred}")
+    if region_pred != "Todos":
+        filtros_activos.append(f"Región: {region_pred}")
+    if tipo_envio != "Todas (0-30 días)":
+        filtros_activos.append(f"Entrega: {tipo_envio}")
+
+    # === Render visual (título + filtros seleccionados integrados)
+    st.markdown(f"""
+    <div class="encabezado-con-filtros">
+        <div style="display: flex; flex-direction: column; gap: 0.2rem; margin-bottom: 1.5rem;">
+            <span style="font-size: 28px; font-weight: 900; color: black;">Predicción de Retención de Clientes</span>
+        </div>
+        {"<div class='chip-container'>" + "".join([f"<div class='chip'>{filtro}</div>" for filtro in filtros_activos]) + "</div>" if filtros_activos else ""}
+    </div>  
+    """, unsafe_allow_html=True)
+
 
     retenidos_proy, total_proy, retencion_proy = calcular_retencion(df_filtrado)
     retenidos_total, total_clientes_total, retencion_total = calcular_retencion(df_proy)
@@ -179,8 +212,24 @@ def vista_prediccion():
     </div>
     """, unsafe_allow_html=True)
 
-    # === Calcular Top 5 Categorías (por pedidos)
-    top5_pred = df_filtrado['categoria_de_productos'].value_counts().head(5).reset_index()
+    # === Base sin filtrar por categoría
+    df_top5 = df_proy.copy()
+
+    # ✅ Aplicar solo los filtros de región y tipo de entrega
+    if region_pred != "Todos":
+        df_top5 = df_top5[df_top5['region'] == region_pred]
+
+    if tipo_envio == "Prime (0-3 días)":
+        df_top5 = df_top5[df_top5['entrega_simulada_dias'].between(0, 3)]
+    elif tipo_envio == "Express (4-7 días)":
+        df_top5 = df_top5[df_top5['entrega_simulada_dias'].between(4, 7)]
+    elif tipo_envio == "Regular (8-30 días)":
+        df_top5 = df_top5[df_top5['entrega_simulada_dias'].between(8, 30)]
+    else:
+        df_top5 = df_top5[df_top5['entrega_simulada_dias'].between(0, 30)]
+
+    # Calcular top 5 categorías
+    top5_pred = df_top5['categoria_de_productos'].value_counts().head(5).reset_index()
     top5_pred.columns = ['Categoría', 'Pedidos']
 
     # === GRÁFICA 1: Distribución
@@ -232,6 +281,7 @@ def vista_prediccion():
     html_fig1 = fig1.to_html(full_html=False, include_plotlyjs='cdn')
 
     # === Clasificar tipo de entrega (Prime, Express, Regular)
+    # === Clasificar tipo de entrega (Prime, Express, Regular)
     df_plot = df_filtrado.dropna(subset=['volumen', 'costo_de_flete'])
     df_plot['tiempo_total_entrega_dias'] = pd.to_numeric(df_plot['tiempo_total_entrega_dias'], errors='coerce')
 
@@ -240,6 +290,12 @@ def vista_prediccion():
         bins=[-1, 3, 7, 30],
         labels=["Prime", "Express", "Regular"]
     )
+
+    # ✅ Aplicar lógica: solo mostrar el tipo seleccionado si no es 'Todas'
+    if tipo_envio != "Todas (0-30 días)":
+        tipo_unico = tipo_envio.split(" ")[0]  # Extrae 'Prime', 'Express' o 'Regular'
+        df_plot = df_plot[df_plot['tipo_entrega'] == tipo_unico]
+
 
     # === Gráfico con color por tipo_entrega
     fig2 = px.scatter(
