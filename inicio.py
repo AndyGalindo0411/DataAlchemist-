@@ -144,19 +144,19 @@ def calcular_kpis(df, df_filtrado, df_region, tipo_entrega, categoria_selecciona
 
     if tipo_entrega == "Prime (0–3 días)":
         dias_filtrados = dias[dias.between(0, 3)]
-        titulo_kpi = "Días Promedio Prime"
+        titulo_kpi = "Mediana de Entrega Prime"
         rango = range(0, 4)
     elif tipo_entrega == "Express (4–7 días)":
         dias_filtrados = dias[dias.between(4, 7)]
-        titulo_kpi = "Días Promedio Express"
+        titulo_kpi = "Mediana de Entrega Express"
         rango = range(4, 8)
     elif tipo_entrega == "Regular (8–30 días)":
         dias_filtrados = dias[dias.between(8, 30)]
-        titulo_kpi = "Días Promedio Regular"
+        titulo_kpi = "Mediana de Entrega Regular"
         rango = range(8, 31)
     else:
         dias_filtrados = dias[dias.between(0, 30)]
-        titulo_kpi = "Días Promedio"
+        titulo_kpi = "Mediana de Entrega"
         rango = range(0, 31)
 
     promedio_filtrado = round(dias_filtrados.median()) if not dias_filtrados.empty else 0
