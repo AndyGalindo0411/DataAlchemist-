@@ -58,8 +58,11 @@ with st.sidebar:
         st.session_state.seccion_activa = "Danu Shop"
     if st.button("Exploración de Datos"):
         st.session_state.seccion_activa = "Exploración de Datos"
-    if st.button("Predicción"):
-        st.session_state.seccion_activa = "Predicción"
+    
+    # ❌ Botón de "Predicción" eliminado
+    # if st.button("Predicción"):
+    #     st.session_state.seccion_activa = "Predicción"
+    
     if st.button("Configuración"):
         st.session_state.seccion_activa = "Configuración"
 
