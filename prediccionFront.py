@@ -6,6 +6,13 @@ import streamlit.components.v1 as components  # type: ignore
 from prediccion import cargar_base_proyeccion, calcular_retencion
 
 def vista_prediccion():
+    # === SWITCH para volver a vista Danu Shop desde Predicción ===
+    switch_estado = st.sidebar.toggle("Dashboard usando el modelo", value=True)
+
+    if not switch_estado:
+        st.session_state.seccion_activa = "Danu Shop"
+        st.rerun()
+
     df_proy, error = cargar_base_proyeccion()
     if error:
         st.error(error)
