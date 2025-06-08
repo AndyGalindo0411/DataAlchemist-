@@ -1,5 +1,5 @@
-import streamlit as st # type: ignore
-import streamlit.components.v1 as components # type: ignore
+import streamlit as st  # type: ignore
+import streamlit.components.v1 as components  # type: ignore
 import base64
 
 # === CSS para ocultar menú lateral ===
@@ -17,8 +17,8 @@ def load_image_base64(path):
         return base64.b64encode(img_file.read()).decode()
 
 
-# === Tarjetas (igual que antes)
-def render_slide(title, description, image, image_on_left=False, text_align="right", title_align="center", margin_left="300px", title_size="32px"):
+# === Tarjeta VERTICAL para TODAS las slides
+def render_slide_vertical(title, description, image, title_align="center", title_size="32px"):
     html = f"""
     <head>
         <link href="https://fonts.googleapis.com/css2?family=Quicksand&display=swap" rel="stylesheet">
@@ -28,87 +28,61 @@ def render_slide(title, description, image, image_on_left=False, text_align="rig
         border: 2px solid #ccc;
         border-radius: 20px;
         box-shadow: 0px 4px 55px rgba(0,0,0,0.2);
-        padding: 2rem;
+        padding: 3rem 2rem;
         margin: 2rem auto;
-        max-width: 900px;
+        max-width: 800px;
         font-family: 'Quicksand', sans-serif;
+        text-align: center;
     ">
+        <div style="margin-bottom: 2rem;">
+            <img src="{image}" style="
+                max-width: 320px;
+                width: 100%;
+                height: auto;
+                object-fit: contain;
+                border-radius: 12px;
+            ">
+        </div>
         <h2 style="
-            text-align: {title_align};
             color: red;
-            font-family: 'Quicksand', sans-serif;
             font-size: {title_size};
             font-weight: bold;
-            margin-top: -20px;
-            margin-left: {margin_left};
-            word-break: break-word;
+            margin-bottom: 1rem;
+            text-align: {title_align};
         ">
             {title}
         </h2>
-
         <div style="
-            display: flex;
-            flex-direction: {'row' if image_on_left else 'row-reverse'};
-            align-items: stretch;
-            gap: 2rem;
-            height: 100%;
+            color: #ff69b4;
+            font-size: 20px;
+            line-height: 1.6;
+            max-width: 90%;
+            margin: 0 auto;
         ">
-            <div style="
-                flex: 2;
-                color: #ff69b4;
-                font-size: 25px;
-                text-align: {text_align};
-                font-family: 'Quicksand', sans-serif;
-                line-height: 1.5;
-                margin-top: -15px;
-                display: flex;
-                align-items: center;
-            ">
-                {description}
-            </div>
-
-            <div style="
-                flex: 2;
-                display: flex;
-                align-items: flex-end;
-                justify-content: center;
-                height: 110px;
-            ">
-                <img src="{image}" style="
-                    width: 100%;
-                    height: 150%;
-                    object-fit: cover;
-                    border-radius: 12px;
-                    margin-top: -200px;
-                ">
-            </div>
+            {description}
         </div>
     </div>
     """
-    components.html(html, height=550)
+    components.html(html, height=800)
+
 
 # === Vista principal
 def vista_introduccion():
-    render_slide(
+    # Todas las tarjetas usan diseño vertical ahora
+    render_slide_vertical(
         title="Maya Angelou",
         description="He aprendido que la gente olvidará lo que dijiste, olvidará lo que hiciste, pero nunca olvidará cómo los hiciste sentir.",
-        image="Imagenes/Imagen1.png",
-        image_on_left=False
+        image=f"data:image/gif;base64,{load_image_base64('Imagenes/Imagen3 (2).gif')}"
     )
-    render_slide(
+    render_slide_vertical(
         title="Benchmark",
         description="Una empresa de E-Commerce tiene un benchmark de retención entre el 20% y 30%.",
-        image="Imagenes/Imagen2.png",
-        image_on_left=True,
-        text_align="left",
-        title_align="left",
-        margin_left="0"
+        image=f"data:image/png;base64,{load_image_base64('Imagenes/Imagen2.png')}"
     )
-    render_slide(
+    render_slide_vertical(
         title="Un Cliente Satisfecho NO Solo Vuelve... También Recomienda.",
         description="La retención de clientes es fundamental para evaluar la fidelidad de los clientes y la efectividad de la estrategia de recompra.",
-        image="Imagenes/Imagen3.gif",
-        margin_left="450px",
+        image=f"data:image/png;base64,{load_image_base64('Imagenes/Imagen1.png')}",
         title_size="28px"
     )
 
@@ -128,14 +102,14 @@ def vista_introduccion():
         .hover-container .hover-text {{
             visibility: hidden;
             width: 220px;
-            background-color: #ff69b4; //cambiar el color
+            background-color: #ff69b4;
             color: white;
             text-align: center;
             border-radius: 8px;
             padding: 8px 12px;
             position: absolute;
             z-index: 1;
-            bottom: 110%; /* arriba de la imagen */
+            bottom: 110%;
             left: 50%;
             transform: translateX(-50%);
             opacity: 0;
@@ -160,8 +134,7 @@ def vista_introduccion():
         """
         st.markdown(button_html, unsafe_allow_html=True)
 
-
-    # Detectar clic usando query_params simulados
+    # Simulación de navegación
     if st.query_params.get("go_danu") is not None:
         st.session_state.seccion_activa = "Danu Shop"
         st.rerun()
