@@ -1,6 +1,15 @@
 import streamlit as st  # type: ignore
 import streamlit.components.v1 as components  # type: ignore
 
+# === CSS para ocultar menú lateral ===
+st.markdown("""
+    <style>
+    [data-testid="stSidebar"], [data-testid="collapsedControl"] {
+        display: none !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 # Función general para renderizar cada tarjeta personalizada
 def render_slide(title, description, image, image_on_left=False, text_align="right", title_align="center", margin_left="300px", title_size="32px"):
     html = f"""
@@ -69,10 +78,9 @@ def render_slide(title, description, image, image_on_left=False, text_align="rig
         </div>
     </div>
     """
-    # Se aumenta la altura para que soporte texto más largo sin cortar
     components.html(html, height=550)
 
-# Vista principal
+# === Vista principal sin menú ===
 def vista_introduccion():
     # Slide 1
     render_slide(
@@ -96,7 +104,7 @@ def vista_introduccion():
         margin_left="0"
     )
 
-    # Slide 3 (título largo y ajustado)
+    # Slide 3
     render_slide(
         title="Un Cliente Satisfecho NO Solo Vuelve... También Recomienda.",
         description="La retención de clientes es fundamental para evaluar la fidelidad de los clientes y la efectividad de la estrategia de recompra.",
@@ -105,5 +113,13 @@ def vista_introduccion():
         text_align="right",
         title_align="center",
         margin_left="450px",
-        title_size="28px"  # ⬅️ un poco más pequeño para caber mejor
+        title_size="28px"
     )
+
+    # Botón para cambiar a Danu Shop
+    st.markdown("<br><hr><br>", unsafe_allow_html=True)
+    col = st.columns([2, 1, 2])[1]
+    with col:
+        if st.button("Ir a Danu Shop 🚀"):
+            st.session_state.seccion_activa = "Danu Shop"
+            st.rerun()
