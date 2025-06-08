@@ -89,52 +89,8 @@ def vista_introduccion():
     # Espaciado
     st.markdown("<br><hr><br>", unsafe_allow_html=True)
 
-    # Mostrar imagen como botón usando base64
-    col = st.columns([2, 1, 2])[1]
-    with col:
-        img_base64 = load_image_base64("Imagenes/LogoDanu.jpeg")
-        button_html = f"""
-        <style>
-        .hover-container {{
-            position: relative;
-            display: inline-block;
-        }}
-        .hover-container .hover-text {{
-            visibility: hidden;
-            width: 220px;
-            background-color: #ff69b4;
-            color: white;
-            text-align: center;
-            border-radius: 8px;
-            padding: 8px 12px;
-            position: absolute;
-            z-index: 1;
-            bottom: 110%;
-            left: 50%;
-            transform: translateX(-50%);
-            opacity: 0;
-            transition: opacity 0.3s ease-in-out;
-            font-size: 13px;
-            font-family: 'Quicksand', sans-serif;
-        }}
-        .hover-container:hover .hover-text {{
-            visibility: visible;
-            opacity: 1;
-        }}
-        </style>
-
-        <form action="" method="post">
-            <button type="submit" name="go_danu" style="border: none; background: none;">
-                <div class="hover-container">
-                    <img src="data:image/png;base64,{img_base64}" style="width: 80%; max-width: 100px;" alt="Ir a Danu Shop">
-                    <div class="hover-text">Bienvenido a Danu Shop — Haz clic para empezar</div>
-                </div>
-            </button>
-        </form>
-        """
-        st.markdown(button_html, unsafe_allow_html=True)
-
-    # Simulación de navegación
-    if st.query_params.get("go_danu") is not None:
-        st.session_state.seccion_activa = "Danu Shop"
-        st.rerun()
+    espacio_izq, centro, espacio_der = st.columns([2, 2, 2])
+    with centro:
+        if st.button("Descubre Danu Shop", key="boton_danu", use_container_width=True):
+            st.session_state.seccion_activa = "Danu Shop"
+            st.rerun()
