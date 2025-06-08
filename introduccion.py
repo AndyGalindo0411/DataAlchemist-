@@ -1,102 +1,109 @@
 import streamlit as st  # type: ignore
+import streamlit.components.v1 as components  # type: ignore
 
-def vista_introduccion():
-    # === Título principal con HTML personalizado ===
-    st.markdown("""
-        <h2 style='text-align: center; color: white;'>
-            Partial Shading <span style='color:#00FFAA;'>Re-estimation</span>
+# Función general para renderizar cada tarjeta personalizada
+def render_slide(title, description, image, image_on_left=False, text_align="right", title_align="center", margin_left="300px", title_size="32px"):
+    html = f"""
+    <head>
+        <link href="https://fonts.googleapis.com/css2?family=Quicksand&display=swap" rel="stylesheet">
+    </head>
+    <div style="
+        background-color: white;
+        border: 2px solid #ccc;
+        border-radius: 20px;
+        box-shadow: 0px 4px 55px rgba(0,0,0,0.2);
+        padding: 2rem;
+        margin: 2rem auto;
+        max-width: 900px;
+        font-family: 'Quicksand', sans-serif;
+    ">
+        <h2 style="
+            text-align: {title_align};
+            color: red;
+            font-family: 'Quicksand', sans-serif;
+            font-size: {title_size};
+            font-weight: bold;
+            margin-top: -20px;
+            margin-left: {margin_left};
+            word-break: break-word;
+        ">
+            {title}
         </h2>
-    """, unsafe_allow_html=True)
 
-    # === Botones de navegación del carrusel ===
-    col_left, _, col_right = st.columns([1, 8, 1])
-    with col_left:
-        if st.button("⬅ Shift left"):
-            st.session_state.slide = st.session_state.get("slide", 0) - 1
-    with col_right:
-        if st.button("Shift right ➡"):
-            st.session_state.slide = st.session_state.get("slide", 0) + 1
+        <div style="
+            display: flex;
+            flex-direction: {'row' if image_on_left else 'row-reverse'};
+            align-items: stretch;
+            gap: 2rem;
+            height: 100%;
+        ">
+            <div style="
+                flex: 2;
+                color: #ff69b4;
+                font-size: 25px;
+                text-align: {text_align};
+                font-family: 'Quicksand', sans-serif;
+                line-height: 1.5;
+                margin-top: -15px;
+                display: flex;
+                align-items: center;
+            ">
+                {description}
+            </div>
 
-    # === Lista de slides (tarjetas con imágenes y objetos) ===
-    slides = [
-        {
-            "title": "South",
-            "objects": {"buildings": 2, "trees": 2, "pole": 1},
-            "image_path": "Imagenes/1.png"
-        },
-        {
-            "title": "East",
-            "objects": {"buildings": 5, "trees": 5, "wall": 1, "pole": 3},
-            "image_path": "Imagenes/2.png"
-        },
-        {
-            "title": "North",
-            "objects": {"trees": 4, "wall": 1, "pole": 6},
-            "image_path": "Imagenes/3.png"
-        }
-    ]
-
-    # === Selección del slide actual de forma circular ===
-    index = st.session_state.get("slide", 0) % len(slides)
-    slide = slides[index]
-
-    # === Estilo personalizado para tarjeta neon púrpura ===
-    st.markdown("""
-        <style>
-        .card-container {
-            max-width: 450px;
-            margin: auto;
-            border-radius: 16px;
-            padding: 0px;
-            box-shadow: 0px 0px 16px 6px #f000ff;
-            background-color: #30003b;
-            color: white;
-            overflow: hidden;
-            font-family: 'Segoe UI', sans-serif;
-        }
-        .card-title {
-            text-align: center;
-            font-size: 24px;
-            font-weight: bold;
-            padding: 10px 0;
-            color: #ffffff;
-        }
-        .card-subtitle {
-            font-size: 16px;
-            font-weight: bold;
-            margin: 15px 0 5px 0;
-            padding-left: 20px;
-        }
-        .card-list {
-            list-style: none;
-            padding-left: 25px;
-            font-size: 15px;
-            margin-bottom: 20px;
-        }
-        .card-list li {
-            margin: 4px 0;
-        }
-        </style>
-    """, unsafe_allow_html=True)
-
-    # === Tarjeta renderizada con contenido dinámico ===
-    st.markdown(f"""
-        <div class="card-container">
-
-            <!-- Imagen superior de la tarjeta -->
-            <img src="{slide['image_path']}" 
-                 style="width: 100%; border-top-left-radius: 16px; border-top-right-radius: 16px;">
-
-            <!-- Título de la tarjeta (ej. South) -->
-            <div class="card-title">{slide['title']}</div>
-
-            <!-- Subtítulo "Objects Detected" -->
-            <div class="card-subtitle">OBJECTS DETECTED</div>
-
-            <!-- Lista dinámica de objetos detectados -->
-            <ul class="card-list">
-                {"".join([f"<li>{k} : {v}</li>" for k, v in slide['objects'].items()])}
-            </ul>
-
+            <div style="
+                flex: 2;
+                display: flex;
+                align-items: flex-end;
+                justify-content: center;
+                height: 110px;
+            ">
+                <img src="{image}" style="
+                    width: 100%;
+                    height: 150%;
+                    object-fit: cover;
+                    border-radius: 12px;
+                    margin-top: -200px;
+                ">
+            </div>
         </div>
-    """, unsafe_allow_html=True)
+    </div>
+    """
+    # Se aumenta la altura para que soporte texto más largo sin cortar
+    components.html(html, height=550)
+
+# Vista principal
+def vista_introduccion():
+    # Slide 1
+    render_slide(
+        title="Maya Angelou",
+        description="He aprendido que la gente olvidará lo que dijiste, olvidará lo que hiciste, pero nunca olvidará cómo los hiciste sentir.",
+        image="https://media.giphy.com/media/3o6Zt481isNVuQI1l6/giphy.gif",
+        image_on_left=False,
+        text_align="right",
+        title_align="center",
+        margin_left="300px"
+    )
+
+    # Slide 2
+    render_slide(
+        title="Benchmark",
+        description="Una empresa de E-Commerce tiene un benchmark de retención entre el 20% y 30%.",
+        image="https://media.giphy.com/media/3o6Zt481isNVuQI1l6/giphy.gif",
+        image_on_left=True,
+        text_align="left",
+        title_align="left",
+        margin_left="0"
+    )
+
+    # Slide 3 (título largo y ajustado)
+    render_slide(
+        title="Un Cliente Satisfecho NO Solo Vuelve... También Recomienda.",
+        description="La retención de clientes es fundamental para evaluar la fidelidad de los clientes y la efectividad de la estrategia de recompra.",
+        image="https://media.giphy.com/media/3o6Zt481isNVuQI1l6/giphy.gif",
+        image_on_left=False,
+        text_align="right",
+        title_align="center",
+        margin_left="450px",
+        title_size="28px"  # ⬅️ un poco más pequeño para caber mejor
+    )
