@@ -1,15 +1,15 @@
-import streamlit as st  # type: ignore
-import pandas as pd  # type: ignore
+import streamlit as st  
+import pandas as pd  
 from pathlib import Path
-from sklearn.preprocessing import StandardScaler  # type: ignore
-from imblearn.combine import SMOTEENN  # type: ignore
+from sklearn.preprocessing import StandardScaler  
+from imblearn.combine import SMOTEENN  
 from collections import Counter
-from sklearn.model_selection import train_test_split  # type: ignore
-from sklearn.neighbors import KNeighborsClassifier  # type: ignore
-from sklearn.metrics import confusion_matrix, classification_report  # type: ignore
-import matplotlib.pyplot as plt  # type: ignore
-import seaborn as sns  # type: ignore
-import numpy as np  # type: ignore
+from sklearn.model_selection import train_test_split  
+from sklearn.neighbors import KNeighborsClassifier  
+from sklearn.metrics import confusion_matrix, classification_report  
+import matplotlib.pyplot as plt  
+import seaborn as sns  
+import numpy as np 
 
 @st.cache_data(show_spinner="Cargando base de datos...")
 def cargar_datos():
@@ -21,6 +21,38 @@ def cargar_datos():
         return df, None
     except Exception as e:
         return None, str(e)
+
+@st.cache_resource
+def pipeline_entrenar_knn(df_original, n_neighbors=5):
+    columnas_a_eliminar = ['precio', 'pago', 'costo_de_flete', 'numero_de_producto_id',
+                           'categoria_nombre_producto', 'tipo_de_pago', 'estado_del_pedido',
+                           'secuencia_corregida', 'frecuencia_de_compra_cliente']
+    df = df_original.drop(columns=columnas_a_eliminar)
+
+    columnas_categoricas = df.select_dtypes(include='object').columns.tolist()
+    df = pd.get_dummies(df, columns=columnas_categoricas, drop_first=True)
+    df = df.astype({col: 'int' for col in df.select_dtypes(include='bool').columns})
+
+    X = df.drop(columns=["tipo_entrega_clase"], errors='ignore')
+    y = df["tipo_entrega_clase"]
+    columnas_X = X.columns.tolist()
+
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
+
+    smote_enn = SMOTEENN(random_state=42)
+    X_resampled, y_resampled = smote_enn.fit_resample(X_scaled, y)
+
+    dist_df = pd.DataFrame.from_dict(Counter(y_resampled), orient='index', columns=['Cantidad'])
+    dist_df.index.name = 'Clase'
+
+    X_train, X_test, y_train, y_test = train_test_split(X_resampled, y_resampled, test_size=0.3, random_state=42)
+
+    knn = KNeighborsClassifier(n_neighbors=n_neighbors)
+    knn.fit(X_train, y_train)
+    y_pred = knn.predict(X_test)
+
+    return knn, scaler, columnas_X, y_test, y_pred, dist_df, df  # también devuelvo dist_df y df_postprocesado
 
 def vista_exploracion():
     st.title("Exploración del Modelo")
@@ -34,43 +66,21 @@ def vista_exploracion():
     if 'df_predicho' not in st.session_state:
         st.session_state.df_predicho = None
 
-    # === ✅ MODELO DENTRO DEL BOTÓN ===
+    # MODELO KNN DENTRO DEL BOTÓN 
     with st.expander("Descubre Nuestros Resultados", expanded=False):
-        columnas_a_eliminar = ['precio', 'pago', 'costo_de_flete', 'numero_de_producto_id',
-                               'categoria_nombre_producto', 'tipo_de_pago', 'estado_del_pedido',
-                               'secuencia_corregida', 'frecuencia_de_compra_cliente']
-        df = df.drop(columns=columnas_a_eliminar)
 
-        columnas_categoricas = df.select_dtypes(include='object').columns.tolist()
-        df = pd.get_dummies(df, columns=columnas_categoricas, drop_first=True)
-        df = df.astype({col: 'int' for col in df.select_dtypes(include='bool').columns})
+        # Llamada al pipeline cacheado
+        knn, scaler, columnas_X, y_test, y_pred, dist_df, df_post = pipeline_entrenar_knn(df)
 
         st.markdown("### Tipos de datos en el DataFrame post-procesamiento")
-        tipos_df = df.dtypes.reset_index()
+        tipos_df = df_post.dtypes.reset_index()
         tipos_df.columns = ['Columna', 'Tipo de Dato']
         st.dataframe(tipos_df, use_container_width=True)
 
-        X = df.drop(columns=["tipo_entrega_clase"], errors='ignore')
-        y = df["tipo_entrega_clase"]
-        columnas_X = X.columns.tolist()
-
-        scaler = StandardScaler()
-        X_scaled = scaler.fit_transform(X)
-
-        smote_enn = SMOTEENN(random_state=42)
-        X_resampled, y_resampled = smote_enn.fit_resample(X_scaled, y)
-
         st.markdown("### Distribución SMOTE + ENN")
-        dist_df = pd.DataFrame.from_dict(Counter(y_resampled), orient='index', columns=['Cantidad'])
-        dist_df.index.name = 'Clase'
         st.dataframe(dist_df, use_container_width=True)
 
-        X_train, X_test, y_train, y_test = train_test_split(X_resampled, y_resampled, test_size=0.3, random_state=42)
-
-        knn = KNeighborsClassifier(n_neighbors=5)
-        knn.fit(X_train, y_train)
-        y_pred = knn.predict(X_test)
-
+        # Matriz de Confusión
         labels = [0, 1, 2]
         target_names = ['Prime', 'Express', 'Regular']
 
@@ -82,9 +92,10 @@ def vista_exploracion():
         ax.set_ylabel('Actual')
         st.pyplot(fig)
 
+        # Reporte de Clasificación
         st.subheader("Reporte de Clasificación")
         report_dict = classification_report(y_test, y_pred, target_names=target_names, output_dict=True)
-        report_df = pd.DataFrame(report_dict).transpose().round(3)
+        report_df = pd.DataFrame(report_dict).transpose().round(2)
         st.dataframe(report_df, use_container_width=True)
 
         # Guardar en sesión
@@ -92,7 +103,7 @@ def vista_exploracion():
         st.session_state.scaler = scaler
         st.session_state.columnas_X = columnas_X
 
-    # === ✅ PREDICCIÓN POR ARCHIVO SUBIDO todo ESTA EN LO MISMO
+    #  PREDICCIÓN POR ARCHIVO SUBIDO 
     st.markdown("---")
     st.markdown(" Modelo KNN ")
 
@@ -132,8 +143,3 @@ def vista_exploracion():
 
         except Exception as e:
             st.error(f"Error al procesar el archivo: {e}")
-
-    # ✅ Botón de descarga separado
-    #if st.session_state.df_predicho is not None:
-    #    csv_out = st.session_state.df_predicho.to_csv(index=False).encode('utf-8')
-    #    st.download_button("Descargar archivo con predicciones", csv_out, file_name="predicciones.csv", mime="text/csv")
