@@ -30,10 +30,12 @@ def vista_exploracion():
         st.error(error)
         return
 
+    # Inicializar variable de sesión
+    if 'df_predicho' not in st.session_state:
+        st.session_state.df_predicho = None
+
     # === ✅ MODELO DENTRO DEL BOTÓN ===
     with st.expander("Descubre Nuestros Resultados", expanded=False):
-        #st.header("Modelo KNN con SMOTE + ENN")
-
         columnas_a_eliminar = ['precio', 'pago', 'costo_de_flete', 'numero_de_producto_id',
                                'categoria_nombre_producto', 'tipo_de_pago', 'estado_del_pedido',
                                'secuencia_corregida', 'frecuencia_de_compra_cliente']
@@ -41,10 +43,8 @@ def vista_exploracion():
 
         columnas_categoricas = df.select_dtypes(include='object').columns.tolist()
         df = pd.get_dummies(df, columns=columnas_categoricas, drop_first=True)
-
         df = df.astype({col: 'int' for col in df.select_dtypes(include='bool').columns})
 
-        # Mostrar tipos de datos
         st.markdown("### Tipos de datos en el DataFrame post-procesamiento")
         tipos_df = df.dtypes.reset_index()
         tipos_df.columns = ['Columna', 'Tipo de Dato']
@@ -60,7 +60,6 @@ def vista_exploracion():
         smote_enn = SMOTEENN(random_state=42)
         X_resampled, y_resampled = smote_enn.fit_resample(X_scaled, y)
 
-        # Mostrar distribución
         st.markdown("### Distribución SMOTE + ENN")
         dist_df = pd.DataFrame.from_dict(Counter(y_resampled), orient='index', columns=['Cantidad'])
         dist_df.index.name = 'Clase'
@@ -88,7 +87,12 @@ def vista_exploracion():
         report_df = pd.DataFrame(report_dict).transpose().round(3)
         st.dataframe(report_df, use_container_width=True)
 
-        # === ✅ PREDICCIÓN POR ARCHIVO SUBIDO ===
+        # Guardar en sesión
+        st.session_state.knn_model = knn
+        st.session_state.scaler = scaler
+        st.session_state.columnas_X = columnas_X
+
+    # === ✅ PREDICCIÓN POR ARCHIVO SUBIDO ===
     st.markdown("---")
     st.markdown(" Modelo KNN ")
 
@@ -101,39 +105,35 @@ def vista_exploracion():
             else:
                 df_input = pd.read_excel(archivo_subido)
 
-            # Validación mínima
             columnas_esperadas = {'volumen', 'region', 'categoria_de_productos'}
             if not columnas_esperadas.issubset(df_input.columns):
                 st.error("El archivo debe contener las columnas: 'volumen', 'region' y 'categoria_de_productos'")
                 return
 
-            # Seleccionar solo columnas necesarias
             df_pred = df_input[['volumen', 'region', 'categoria_de_productos']].copy()
-
-            # Asegurar que las columnas tienen el mismo nombre que las del modelo original
             df_pred.columns = ['volumen', 'region', 'categoria_nombre_producto']
-
-            # Aplicar get_dummies igual que al modelo original
             df_pred = pd.get_dummies(df_pred, drop_first=True)
 
-            # Asegurar que tenga las mismas columnas que el modelo entrenado (rellenar con 0 donde falten)
-            for col in columnas_X:
+            for col in st.session_state.columnas_X:
                 if col not in df_pred.columns:
                     df_pred[col] = 0
-            df_pred = df_pred[columnas_X]  # Reordenar columnas igual que X del modelo
+            df_pred = df_pred[st.session_state.columnas_X]
 
-            # Escalar y predecir
-            X_pred_scaled = scaler.transform(df_pred)
-            predicciones = knn.predict(X_pred_scaled)
+            X_pred_scaled = st.session_state.scaler.transform(df_pred)
+            predicciones = st.session_state.knn_model.predict(X_pred_scaled)
             pred_label = {0: 'Prime', 1: 'Express', 2: 'Regular'}
             df_input['Predicción'] = [pred_label[p] for p in predicciones]
 
-            st.success("✅ Predicciones generadas correctamente.")
+            st.success("Archivo con Ayuda con el Modelo")
             st.dataframe(df_input)
 
-            # ✅ Botón de descarga
-            csv_out = df_input.to_csv(index=False).encode('utf-8')
-            st.download_button("Descargar archivo con predicciones", csv_out, file_name="predicciones.csv", mime="text/csv")
+            # Guardar el DataFrame predicho en sesión
+            st.session_state.df_predicho = df_input
 
         except Exception as e:
             st.error(f"Error al procesar el archivo: {e}")
+
+    # ✅ Botón de descarga separado
+    if st.session_state.df_predicho is not None:
+        csv_out = st.session_state.df_predicho.to_csv(index=False).encode('utf-8')
+        st.download_button("Descargar archivo con predicciones", csv_out, file_name="predicciones.csv", mime="text/csv")

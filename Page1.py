@@ -11,7 +11,6 @@ st.set_page_config(
 from inicioFront import vista_inicio
 from datos import vista_exploracion
 from prediccionFront import vista_prediccion
-from configuracion import vista_configuracion
 from introduccion import vista_introduccion
 
 # === ESTADO DE NAVEGACIÓN INICIAL ===
@@ -60,8 +59,6 @@ if st.session_state.seccion_activa != "Inicio":
             st.session_state.seccion_activa = "Danu Shop"
         if st.button("Exploración de Datos"):
             st.session_state.seccion_activa = "Exploración de Datos"
-        if st.button("Configuración"):
-            st.session_state.seccion_activa = "Configuración"
 
         st.markdown("<div style='flex-grow: 1; height: 40px;'></div>", unsafe_allow_html=True)
 
@@ -74,5 +71,3 @@ elif st.session_state.seccion_activa == "Exploración de Datos":
     vista_exploracion()
 elif st.session_state.seccion_activa == "Predicción":
     vista_prediccion()
-elif st.session_state.seccion_activa == "Configuración":
-    vista_configuracion()
