@@ -88,40 +88,52 @@ def vista_exploracion():
         report_df = pd.DataFrame(report_dict).transpose().round(3)
         st.dataframe(report_df, use_container_width=True)
 
-    # === ✅ EJEMPLO DE PREDICCIÓN FUERA DEL EXPANDER ===
-    st.markdown("### 🎬 Ejemplo de Predicción de un Pedido Nuevo")
-    volumen_demo = st.slider("Volumen del pedido", min_value=1000, max_value=100000, value=5000, step=500)
-    cantidad_productos_demo = st.slider("Cantidad de productos por orden", min_value=1, max_value=10, value=1)
+        # === ✅ PREDICCIÓN POR ARCHIVO SUBIDO ===
+    st.markdown("---")
+    st.markdown(" Modelo KNN ")
 
-    region_demo = st.selectbox("Región", options=['Centro', 'Norte', 'Sur'])
-    categoria_demo = st.selectbox("Categoría de producto", options=['cool_stuff', 'mascotas', 'mobiliario', 'perfumeria', 'ferramentas_jardim'])
+    archivo_subido = st.file_uploader("Sube tu archivo con pedidos (volumen, region, categoria_de_productos)", type=["csv", "xlsx"])
 
-    # Utiliza las columnas_X ya obtenidas del modelo
-    if 'columnas_X' not in locals():
-        st.warning("⚠️ Primero ejecuta el modelo desde el botón superior.")
-        return
+    if archivo_subido is not None:
+        try:
+            if archivo_subido.name.endswith(".csv"):
+                df_input = pd.read_csv(archivo_subido)
+            else:
+                df_input = pd.read_excel(archivo_subido)
 
-    valores_demo = {col: 0 for col in columnas_X}
-    valores_demo['volumen'] = volumen_demo
-    valores_demo['cantidad_productos_por_orden'] = cantidad_productos_demo
+            # Validación mínima
+            columnas_esperadas = {'volumen', 'region', 'categoria_de_productos'}
+            if not columnas_esperadas.issubset(df_input.columns):
+                st.error("El archivo debe contener las columnas: 'volumen', 'region' y 'categoria_de_productos'")
+                return
 
-    if 'region_Norte' in columnas_X and region_demo == 'Norte':
-        valores_demo['region_Norte'] = 1
-    if 'region_Sur' in columnas_X and region_demo == 'Sur':
-        valores_demo['region_Sur'] = 1
+            # Seleccionar solo columnas necesarias
+            df_pred = df_input[['volumen', 'region', 'categoria_de_productos']].copy()
 
-    if 'categoria_nombre_producto_mascotas' in columnas_X and categoria_demo == 'mascotas':
-        valores_demo['categoria_nombre_producto_mascotas'] = 1
-    if 'categoria_nombre_producto_mobiliario' in columnas_X and categoria_demo == 'mobiliario':
-        valores_demo['categoria_nombre_producto_mobiliario'] = 1
-    if 'categoria_nombre_producto_perfumeria' in columnas_X and categoria_demo == 'perfumeria':
-        valores_demo['categoria_nombre_producto_perfumeria'] = 1
-    if 'categoria_nombre_producto_ferramentas_jardim' in columnas_X and categoria_demo == 'ferramentas_jardim':
-        valores_demo['categoria_nombre_producto_ferramentas_jardim'] = 1
+            # Asegurar que las columnas tienen el mismo nombre que las del modelo original
+            df_pred.columns = ['volumen', 'region', 'categoria_nombre_producto']
 
-    X_demo_df = pd.DataFrame([valores_demo])
-    X_demo_scaled = scaler.transform(X_demo_df)
-    y_demo_pred = knn.predict(X_demo_scaled)[0]
-    pred_label = {0: 'Prime', 1: 'Express', 2: 'Regular'}
+            # Aplicar get_dummies igual que al modelo original
+            df_pred = pd.get_dummies(df_pred, drop_first=True)
 
-    st.success(f"👉 El modelo predice que este pedido será entregado como: **{pred_label[y_demo_pred]}** 🚚")
+            # Asegurar que tenga las mismas columnas que el modelo entrenado (rellenar con 0 donde falten)
+            for col in columnas_X:
+                if col not in df_pred.columns:
+                    df_pred[col] = 0
+            df_pred = df_pred[columnas_X]  # Reordenar columnas igual que X del modelo
+
+            # Escalar y predecir
+            X_pred_scaled = scaler.transform(df_pred)
+            predicciones = knn.predict(X_pred_scaled)
+            pred_label = {0: 'Prime', 1: 'Express', 2: 'Regular'}
+            df_input['Predicción'] = [pred_label[p] for p in predicciones]
+
+            st.success("✅ Predicciones generadas correctamente.")
+            st.dataframe(df_input)
+
+            # ✅ Botón de descarga
+            csv_out = df_input.to_csv(index=False).encode('utf-8')
+            st.download_button("Descargar archivo con predicciones", csv_out, file_name="predicciones.csv", mime="text/csv")
+
+        except Exception as e:
+            st.error(f"Error al procesar el archivo: {e}")
