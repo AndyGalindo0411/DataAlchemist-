@@ -92,7 +92,7 @@ def vista_exploracion():
         st.session_state.scaler = scaler
         st.session_state.columnas_X = columnas_X
 
-    # === ✅ PREDICCIÓN POR ARCHIVO SUBIDO ===
+    # === ✅ PREDICCIÓN POR ARCHIVO SUBIDO todo ESTA EN LO MISMO
     st.markdown("---")
     st.markdown(" Modelo KNN ")
 
@@ -134,6 +134,6 @@ def vista_exploracion():
             st.error(f"Error al procesar el archivo: {e}")
 
     # ✅ Botón de descarga separado
-    if st.session_state.df_predicho is not None:
-        csv_out = st.session_state.df_predicho.to_csv(index=False).encode('utf-8')
-        st.download_button("Descargar archivo con predicciones", csv_out, file_name="predicciones.csv", mime="text/csv")
+    #if st.session_state.df_predicho is not None:
+    #    csv_out = st.session_state.df_predicho.to_csv(index=False).encode('utf-8')
+    #    st.download_button("Descargar archivo con predicciones", csv_out, file_name="predicciones.csv", mime="text/csv")

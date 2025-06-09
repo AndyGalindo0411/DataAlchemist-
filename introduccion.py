@@ -44,7 +44,7 @@ def render_slide_vertical(title, description, image, title_align="center", title
             ">
         </div>
         <h2 style="
-            color: red;
+            color: #111578;
             font-size: {title_size};
             font-weight: bold;
             margin-bottom: 1rem;
@@ -53,7 +53,7 @@ def render_slide_vertical(title, description, image, title_align="center", title
             {title}
         </h2>
         <div style="
-            color: #ff69b4;
+            color: #2c45ba;
             font-size: 20px;
             line-height: 1.6;
             max-width: 90%;
@@ -75,14 +75,14 @@ def vista_introduccion():
         image=f"data:image/gif;base64,{load_image_base64('Imagenes/Imagen3 (2).gif')}"
     )
     render_slide_vertical(
-        title="Benchmark",
-        description="Una empresa de E-Commerce tiene un benchmark de retención entre el 20% y 30%.",
-        image=f"data:image/png;base64,{load_image_base64('Imagenes/Imagen2.png')}"
+        title="Un Cliente Satisfecho NO Solo Vuelve... También Recomienda",
+        description="La retención de clientes es fundamental para evaluar la fidelidad de los clientes y la efectividad de la estrategia de recompra.",
+        image=f"data:image/png;base64,{load_image_base64('Imagenes/Imagen1.png')}"
     )
     render_slide_vertical(
-        title="Un Cliente Satisfecho NO Solo Vuelve... También Recomienda.",
-        description="La retención de clientes es fundamental para evaluar la fidelidad de los clientes y la efectividad de la estrategia de recompra.",
-        image=f"data:image/png;base64,{load_image_base64('Imagenes/Imagen1.png')}",
+        title="Benchmark",
+        description="Una empresa de E-Commerce tiene un benchmark de retención entre el 20% y 30%.",
+        image=f"data:image/png;base64,{load_image_base64('Imagenes/Imagen2.png')}",
         title_size="28px"
     )
 

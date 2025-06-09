@@ -119,9 +119,9 @@ def calcular_kpis(df, df_filtrado, df_region, tipo_entrega, categoria_selecciona
 
     if tipo:
         df_tipo = df_categoria[df_categoria['tipo_entrega'] == tipo]
-        volumen_promedio = df_tipo['volumen'].median()
+        volumen_promedio = df_tipo['volumen'].mean()
     else:
-        volumen_promedio = df_categoria['volumen'].median()
+        volumen_promedio = df_categoria['volumen'].mean()
 
     volumen_promedio = round(volumen_promedio, 2) if not pd.isna(volumen_promedio) else 0
 
