@@ -163,12 +163,11 @@ def vista_inicio():
             categoria_seleccionada,
             region_seleccionada
         )
-
     # === Mostrar título y filtros en la misma línea ===
     filtros_activos = []
 
     if categoria_seleccionada != "Todos":
-        filtros_activos.append(f"Categoría: {categoria_seleccionada}")
+        filtros_activos.append(f"Categoría: {categoria_seleccionada}")  
     if tipo_entrega != "De (0-30 días)":
         filtros_activos.append(f"Entrega: {tipo_entrega}")
     if region_seleccionada != "Todos":
@@ -176,6 +175,7 @@ def vista_inicio():
     if fecha_periodo is not None:
         filtros_activos.append(f"Fecha: {fecha_seleccionada}")
 
+    # === CSS para los chips y estilo especial de "FILTROS: NINGUNO"
     st.markdown("""
     <style>
     .encabezado-con-filtros {
@@ -185,25 +185,6 @@ def vista_inicio():
         margin-bottom: 1.5rem;
         flex-wrap: wrap;
     }
-    .titulo-linea {
-        display: flex;
-        align-items: baseline;
-        gap: 10px;
-        margin-bottom: 1.5rem;
-        flex-wrap: wrap;
-    }
-    .titulo-principal {
-        font-size: 80px;
-        font-weight: 900;
-        color: black;
-        margin: 0;
-    }
-    .subtitulo {
-        font-size: 40px;
-        font-weight: 800;
-        color: #444;
-        margin: 0;
-    }
     .chip-container {
         display: flex;
         gap: 10px;
@@ -211,27 +192,50 @@ def vista_inicio():
         margin-top: 0.2rem;
     }
     .chip {
-        background-color: #white; /* Fondo azul claro */
+        background-color: white;
         border-radius: 30px;
         padding: 6px 14px;
         font-size: 14px;
         font-weight: 500;
-        color: #040959; /* Color de Texto*/
+        color: #040959;
         border: 1px solid #040959;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+    }
+    .chip-ninguno {
+        background-color: #f8f8f8 !important;
+        border: 1.5px dashed #999 !important;
+        color: #777 !important;
+        font-style: italic !important;
+        padding: 6px 14px;
+        border-radius: 30px;
+        font-size: 14px;
+        font-weight: 500;
+        box-shadow: none !important;
     }
     </style>
     """, unsafe_allow_html=True)
 
-    # === Render del bloque con título y chips ===
+    # === HTML dinámico de los filtros
+    if filtros_activos:
+        chips_html = "<div class='chip-container'>" + "".join(
+            [f"<div class='chip'>{filtro}</div>" for filtro in filtros_activos]
+        ) + "</div>"
+    else:
+        chips_html = """
+    <div class='chip-container'>
+        <div class='chip chip-ninguno'>NINGÚN FILTRO SELECCIONADO</div>
+    </div>
+    """
+
+    # === Render del título del dashboard con chips de filtros
     st.markdown(f"""
     <div class="encabezado-con-filtros">
         <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 1.5rem;">
             <span style="font-size: 30px; font-weight: 900; color: black;">Danu Shop</span>
             <span style="font-size: 20px; font-weight: 500; color: #444;">- Panel de Indicadores Clave y Estratégicos</span>
         </div>
-        {"<div class='chip-container'>" + "".join([f"<div class='chip'>{filtro}</div>" for filtro in filtros_activos]) + "</div>" if filtros_activos else ""}
-    </div>  
+        {chips_html}
+    </div>
     """, unsafe_allow_html=True)
 
     st.markdown(f"""
