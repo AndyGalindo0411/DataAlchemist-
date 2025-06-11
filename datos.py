@@ -53,7 +53,7 @@ def pipeline_entrenar_knn(df_original, n_neighbors=5):
     knn.fit(X_train, y_train)
     y_pred = knn.predict(X_test)
 
-    return knn, scaler, columnas_X, y_test, y_pred, dist_df, df  # también devuelvo dist_df y df_postprocesado
+    return knn, scaler, columnas_X, y_test, y_pred, dist_df, df  
 
 def vista_exploracion():
     st.title("Exploración del Modelo")
@@ -104,7 +104,6 @@ def vista_exploracion():
         st.session_state.scaler = scaler
         st.session_state.columnas_X = columnas_X
 
-    #  PREDICCIÓN POR ARCHIVO SUBIDO 
     #  PREDICCIÓN POR ARCHIVO SUBIDO EN EXPANDER
     st.markdown("---")
     with st.expander("Prueba Nuestro Modelo", expanded=False):
@@ -139,7 +138,6 @@ def vista_exploracion():
                     st.success("Predicciones Generadas")
                     st.dataframe(df_input, use_container_width=True)
 
-                    # Guardar el DataFrame predicho en sesión
                     st.session_state.df_predicho = df_input
 
             except Exception as e:
@@ -213,9 +211,9 @@ def vista_exploracion():
                 title=f"Distribución de Predicciones por Categoría {'(todas las regiones)' if region_seleccionada == 'Todas' else f'en {region_seleccionada}'}",
                 labels={"categoria_de_productos": "Categoría", "Predicción": "Tipo de Entrega"},
                 color_discrete_map={
-                    "Prime": "#020873",    # azul
-                    "Express": "#364d99",  # naranja
-                    "Regular": "#619ec5"   # verde
+                    "Prime": "#020873",    
+                    "Express": "#364d99",  
+                    "Regular": "#619ec5"   
                 }
             )
             fig.update_layout(

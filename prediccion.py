@@ -6,7 +6,6 @@ import plotly.express as px # type: ignore
 
 @st.cache_data(show_spinner="Cargando base de proyección...")
 def cargar_base_proyeccion():
-    # archivo = Path("baseProyeccion_ultrapro.xlsx")
     archivo = Path("DATASETFINALOK.xlsx")
     if not archivo.exists():
         return None, "Archivo baseProyeccion.xlsx no encontrado."
