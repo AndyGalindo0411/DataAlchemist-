@@ -176,6 +176,7 @@ def vista_inicio():
         filtros_activos.append(f"Fecha: {fecha_seleccionada}")
 
     # === CSS para los chips y estilo especial de "FILTROS: NINGUNO"
+    # === Estilo para chips de filtros
     st.markdown("""
     <style>
     .encabezado-con-filtros {
@@ -192,19 +193,19 @@ def vista_inicio():
         margin-top: 0.2rem;
     }
     .chip {
-        background-color: white;
+        background-color: #040959;
         border-radius: 30px;
         padding: 6px 14px;
         font-size: 14px;
         font-weight: 500;
-        color: #040959;
+        color: white;
         border: 1px solid #040959;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
     }
     .chip-ninguno {
-        background-color: #f8f8f8 !important;
-        border: 1.5px dashed #999 !important;
-        color: #777 !important;
+        background-color: #040959 !important;
+        border: 1.5px dashed white !important;
+        color: white !important;
         font-style: italic !important;
         padding: 6px 14px;
         border-radius: 30px;
