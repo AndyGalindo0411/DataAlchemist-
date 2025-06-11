@@ -1,24 +1,23 @@
 import streamlit as st  # type: ignore
 
-# === ⚠️ ESTA LÍNEA DEBE IR PRIMERO ===
 st.set_page_config(
     page_title="Data Alchemist",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# ✅ IMPORTACIÓN DE VISTAS
+#IMPORTACIÓN DE VISTAS
 from inicioFront import vista_inicio
 from datos import vista_exploracion
 from prediccionFront import vista_prediccion
 from introduccion import vista_introduccion
-from conclusion import vista_conclusion  # ✅ NUEVA VISTA
+from conclusion import vista_conclusion  
 
 # === ESTADO DE NAVEGACIÓN INICIAL ===
 if "seccion_activa" not in st.session_state:
     st.session_state.seccion_activa = "Inicio"
 
-# === ESTILO PERSONALIZADO PARA DANU SHOP ===
+# === ESTILO ===
 if st.session_state.seccion_activa == "Danu Shop":
     st.markdown("""
         <style>
@@ -52,11 +51,10 @@ if st.session_state.seccion_activa != "Inicio":
         except FileNotFoundError:
             pass
 
-        # === CAMBIO DE COLOR DEL SIDEBAR ===
         st.markdown("""
             <style>
             section[data-testid="stSidebar"] {
-                background-color: #eef4f7;  /* 🔵 Cambia este color según lo desees */
+                background-color: #eef4f7;  
             }
             </style>
         """, unsafe_allow_html=True)
@@ -76,7 +74,7 @@ if st.session_state.seccion_activa != "Inicio":
 
 # === RENDERIZADOR PRINCIPAL ===
 if st.session_state.seccion_activa == "Inicio":
-    vista_introduccion()  # ❌ SIN MENÚ
+    vista_introduccion()  
 elif st.session_state.seccion_activa == "Danu Shop":
     vista_inicio()
 elif st.session_state.seccion_activa == "Exploración de Datos":

@@ -9,7 +9,7 @@ import streamlit.components.v1 as components  # type: ignore
 from inicio import cargar_datos, aplicar_filtros, calcular_kpis
 from inicio import obtener_top5_top_categorias
 from inicio import mostrar_linea_distribucion_entregas
-from inicio import mostrar_dispersion_volumen_vs_flete_filtrado  # ✅ Asegúrate de tener esto
+from inicio import mostrar_dispersion_volumen_vs_flete_filtrado  
 
 def vista_inicio():
     # === Estilos personalizados mejorados ===
@@ -115,12 +115,11 @@ def vista_inicio():
         """, unsafe_allow_html=True)
     
     # === SWITCH para cambiar de Danu Shop a Predicción ===
-    # === SWITCH para cambiar de Danu Shop a Predicción ===
     switch_estado = st.sidebar.toggle("Dashboard sin usar el modelo", value=False, help="Activa el switch para ver el dashboard con el modelo")
 
     if switch_estado:
         st.session_state.seccion_activa = "Predicción"
-        st.rerun()  # ✅ Esta es la función correcta y actual para recargar
+        st.rerun()  
 
     with st.sidebar.expander("Filtros", expanded=True):
         categorias = ['Todos'] + sorted(df['categoria_de_productos'].dropna().unique().tolist())
@@ -133,7 +132,6 @@ def vista_inicio():
             "Regular (8–30 días)"
         ])
 
-        # === NUEVOS FILTROS SOLICITADOS ===
         regiones = ['Todos'] + sorted(df['region'].dropna().unique().tolist())
         region_seleccionada = st.selectbox("Región", regiones)
 
@@ -143,7 +141,7 @@ def vista_inicio():
         fechas_formato = ['Todos'] + fechas_unicas.astype(str).str.replace('-', ' - ', regex=False).tolist()
 
         fecha_seleccionada = st.selectbox("Fecha (Mes - Año)", fechas_formato)
-        fecha_periodo = None if fecha_seleccionada == 'Todos' else fecha_seleccionada.replace(" - ", "-")  # Convertir a formato 'YYYY-MM'
+        fecha_periodo = None if fecha_seleccionada == 'Todos' else fecha_seleccionada.replace(" - ", "-")  
 
         # Aplicar filtros con fecha incluida
         df_filtrado, df_region = aplicar_filtros(
@@ -163,6 +161,7 @@ def vista_inicio():
             categoria_seleccionada,
             region_seleccionada
         )
+        
     # === Mostrar título y filtros en la misma línea ===
     filtros_activos = []
 
@@ -176,7 +175,6 @@ def vista_inicio():
         filtros_activos.append(f"Fecha: {fecha_seleccionada}")
 
     # === CSS para los chips y estilo especial de "FILTROS: NINGUNO"
-    # === Estilo para chips de filtros
     st.markdown("""
     <style>
     .encabezado-con-filtros {
@@ -275,9 +273,7 @@ def vista_inicio():
 </div>
 """, unsafe_allow_html=True)
     
-    # === FILA: Distribución + Dispersión a la izquierda, Top Categorías a la derecha ===
     # === UNIFICADO: Las tres gráficas en una sola tarjeta ===
-    # Preparamos las gráficas individualmente
     fig_linea = mostrar_linea_distribucion_entregas(kpis["dias_filtrados"], kpis["rango"])
     html_linea = fig_linea.to_html(full_html=False, include_plotlyjs='cdn')
 
@@ -304,15 +300,14 @@ def vista_inicio():
         paper_bgcolor='white',
         plot_bgcolor='white',
         showlegend=False,
-        height=250,   # Igual que distribución
-        width=700,    # Ajustado al tamaño izquierdo
+        height=250,   
+        width=700,   
         margin=dict(t=0, b=80, l=100, r=60),
         xaxis=dict(tickangle=-20, tickfont=dict(size=11), automargin=True),
         yaxis=dict(tickfont=dict(size=12)),
         hoverlabel=dict(bgcolor="white", font_size=13, font_family="Arial")
     )
 
-    # Antes del HTML
     if region_seleccionada != 'Todos' and fecha_periodo != 'Todos':
         titulo_top = f"Top Categorías"
     elif region_seleccionada != 'Todos':

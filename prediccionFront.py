@@ -33,7 +33,7 @@ def vista_prediccion():
             "Regular (8-30 días)"
         ])
 
-        # === Aplicar filtros ===
+    # === Aplicar filtros ===
     df_filtrado = df_proy.copy()
 
     if categoria_pred != "Todos":
@@ -112,7 +112,6 @@ def vista_prediccion():
     """, unsafe_allow_html=True)
 
     # === Estilo para chips de filtros
-    # === Estilo para chips de filtros
     st.markdown("""
     <style>
     .encabezado-con-filtros {
@@ -151,6 +150,7 @@ def vista_prediccion():
     }
     </style>
     """, unsafe_allow_html=True)
+
     # === Construcción de filtros activos
     filtros_activos = []
     if categoria_pred != "Todos":
@@ -193,7 +193,7 @@ def vista_prediccion():
     volumen_total_median = round(df_proy['volumen'].dropna().median(), 2)
 
     # === Cálculo adicional
-    num_pedidos_pred = len(df_filtrado)  # 🔹 Nuevo KPI agregado
+    num_pedidos_pred = len(df_filtrado)  
 
     # === KPIs visuales (formato heredado de inicioFront)
     st.markdown(f"""
@@ -233,7 +233,7 @@ def vista_prediccion():
     # === Base sin filtrar por categoría
     df_top5 = df_proy.copy()
 
-    # ✅ Aplicar solo los filtros de región y tipo de entrega
+    # Aplicar solo los filtros de región y tipo de entrega
     if region_pred != "Todos":
         df_top5 = df_top5[df_top5['region'] == region_pred]
 
@@ -299,7 +299,6 @@ def vista_prediccion():
     html_fig1 = fig1.to_html(full_html=False, include_plotlyjs='cdn')
 
     # === Clasificar tipo de entrega (Prime, Express, Regular)
-    # === Clasificar tipo de entrega (Prime, Express, Regular)
     df_plot = df_filtrado.dropna(subset=['volumen', 'costo_de_flete'])
     df_plot['tiempo_total_entrega_dias'] = pd.to_numeric(df_plot['tiempo_total_entrega_dias'], errors='coerce')
 
@@ -309,7 +308,7 @@ def vista_prediccion():
         labels=["Prime", "Express", "Regular"]
     )
 
-    # ✅ Aplicar lógica: solo mostrar el tipo seleccionado si no es 'Todas'
+    # Aplicar lógica: solo mostrar el tipo seleccionado si no es 'Todas'
     if tipo_envio != "Todas (0-30 días)":
         tipo_unico = tipo_envio.split(" ")[0]  # Extrae 'Prime', 'Express' o 'Regular'
         df_plot = df_plot[df_plot['tipo_entrega'] == tipo_unico]
@@ -328,9 +327,9 @@ def vista_prediccion():
             "tipo_entrega": "Tipo de Entrega"
         },
         color_discrete_map={
-            "Prime": "#19FF19",     # Azul oscuro
-            "Express": "#fa73db",   # Azul medio
-            "Regular": "#3cfdf9"    # Azul claro
+            "Prime": "#19FF19",     
+            "Express": "#fa73db",   
+            "Regular": "#3cfdf9"    
         }
     )
 

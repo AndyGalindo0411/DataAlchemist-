@@ -16,8 +16,6 @@ def load_image_base64(path):
     with open(path, "rb") as img_file:
         return base64.b64encode(img_file.read()).decode()
 
-
-# === Tarjeta VERTICAL para TODAS las slides
 def render_slide_vertical(title, description, image, title_align="center", title_size="32px"):
     html = f"""
     <head>
@@ -68,7 +66,6 @@ def render_slide_vertical(title, description, image, title_align="center", title
 
 # === Vista principal
 def vista_introduccion():
-    # Todas las tarjetas usan diseño vertical ahora
     render_slide_vertical(
         title="Maya Angelou",
         description="He aprendido que la gente olvidará lo que dijiste, olvidará lo que hiciste, pero nunca olvidará cómo los hiciste sentir.",
@@ -86,7 +83,6 @@ def vista_introduccion():
         title_size="28px"
     )
 
-    # Espaciado
     st.markdown("<br><hr><br>", unsafe_allow_html=True)
 
     espacio_izq, centro, espacio_der = st.columns([2, 2, 2])

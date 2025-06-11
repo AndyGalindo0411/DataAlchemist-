@@ -13,7 +13,7 @@ div.stButton > button {
 
 div.stButton > button:hover {
     background-color: #020873;         /* Fondo azul al hacer hover */
-    color: white;                      /* ✅ Texto permanece negro */
+    color: white;                      /* Texto permanece negro */
     border: 1px solid #020873;
 }
 

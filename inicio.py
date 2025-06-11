@@ -29,7 +29,7 @@ def mostrar_linea_distribucion_entregas(dias_filtrados, rango):
         mode="markers",
         marker=dict(color="#263cbb", size=8, line=dict(width=1, color='#263cbb')),
         hovertemplate="Día %{x}<br>Cantidad: %{y}<extra></extra>",
-        showlegend=False  # 👈 Esto oculta el label
+        showlegend=False  
     ))
 
     fig.update_layout(
@@ -126,8 +126,6 @@ def calcular_kpis(df, df_filtrado, df_region, tipo_entrega, categoria_selecciona
     volumen_promedio = round(volumen_promedio, 2) if not pd.isna(volumen_promedio) else 0
 
     # === RETENCIÓN USANDO SOLO ALGUNOS FILTROS (df_filtrado) ===
-    # === RETENCIÓN USANDO SOLO ALGUNOS FILTROS (df_filtrado) ===
-    # === RETENCIÓN CONDICIONAL SEGÚN FILTROS ===
     if categoria_seleccionada == 'Todos' and region_seleccionada == 'Todos' and tipo_entrega == 'De (0-30 días)':
         df_retencion = df_filtrado
     else:
@@ -162,7 +160,7 @@ def calcular_kpis(df, df_filtrado, df_region, tipo_entrega, categoria_selecciona
     promedio_filtrado = round(dias_filtrados.median()) if not dias_filtrados.empty else 0
 
     # Reemplazado KPI anterior por nuevo conteo de pedidos
-    num_pedidos = len(df_region)  # Nuevo KPI que cuenta pedidos después de todos los filtros
+    num_pedidos = len(df_region)  
 
     ahorro_prime = ahorro_express = None
     if 'valor_total' in df_region.columns and 'tiempo_total_entrega_dias' in df_region.columns:
@@ -180,7 +178,7 @@ def calcular_kpis(df, df_filtrado, df_region, tipo_entrega, categoria_selecciona
         "no_retenidos_cat": no_retenidos_cat,
         "titulo_kpi": titulo_kpi,
         "promedio_filtrado": promedio_filtrado,
-        "num_pedidos": num_pedidos,  # ✅ NUEVO KPI
+        "num_pedidos": num_pedidos,  
         "ahorro_prime": ahorro_prime,
         "ahorro_express": ahorro_express,
         "dias_filtrados": dias_filtrados,
@@ -255,9 +253,9 @@ def mostrar_dispersion_volumen_vs_flete_filtrado(df, categoria, tipo_entrega):
         y='costo_de_flete',
         color='tipo_entrega',
         color_discrete_map={
-            'Prime': "#05d721",    # Azul oscuro
-            'Express': "#dd0f98",  # Azul medio #41B6F0
-            'Regular': "#1329ee"   # Azul claro #09479E
+            'Prime': "#05d721",    
+            'Express': "#dd0f98",  
+            'Regular': "#1329ee"   
         },
         labels={
             'volumen': 'Volumen (cm³)',
