@@ -259,7 +259,6 @@ def vista_inicio():
         <div class='kpi-title'>Volumen Promedio</div>
         <div class='kpi-value'>{int(kpis['volumen_promedio']):,} cm³</div>
         <div class='kpi-delta {kpis['volumen_promedio']}'>
-            Volumen Promedio
         </div>
     </div>
     <div class='kpi-box'>
@@ -385,4 +384,3 @@ def vista_inicio():
 
 </div>
 """, height=595, scrolling=False)
-
