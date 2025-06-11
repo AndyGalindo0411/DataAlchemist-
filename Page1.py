@@ -12,6 +12,7 @@ from inicioFront import vista_inicio
 from datos import vista_exploracion
 from prediccionFront import vista_prediccion
 from introduccion import vista_introduccion
+from conclusion import vista_conclusion  # ✅ NUEVA VISTA
 
 # === ESTADO DE NAVEGACIÓN INICIAL ===
 if "seccion_activa" not in st.session_state:
@@ -59,6 +60,8 @@ if st.session_state.seccion_activa != "Inicio":
             st.session_state.seccion_activa = "Danu Shop"
         if st.button("Exploración de Datos"):
             st.session_state.seccion_activa = "Exploración de Datos"
+        if st.button("Conclusión"):  # ✅ NUEVO BOTÓN
+            st.session_state.seccion_activa = "Conclusión"
 
         st.markdown("<div style='flex-grow: 1; height: 40px;'></div>", unsafe_allow_html=True)
 
@@ -71,3 +74,5 @@ elif st.session_state.seccion_activa == "Exploración de Datos":
     vista_exploracion()
 elif st.session_state.seccion_activa == "Predicción":
     vista_prediccion()
+elif st.session_state.seccion_activa == "Conclusión":  # ✅ NUEVA SECCIÓN
+    vista_conclusion()
