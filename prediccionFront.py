@@ -110,7 +110,6 @@ def vista_prediccion():
     .down { color: red; }
     </style>
     """, unsafe_allow_html=True)
-
     # === Estilo para chips de filtros
     st.markdown("""
     <style>
@@ -148,7 +147,7 @@ def vista_prediccion():
         font-weight: 500;
         box-shadow: none !important;
     }
-    </style>
+    </style>    
     """, unsafe_allow_html=True)
 
     # === Construcción de filtros activos
@@ -160,19 +159,32 @@ def vista_prediccion():
     if tipo_envio != "Todas (0-30 días)":
         filtros_activos.append(f"Entrega: {tipo_envio}")
 
-    # === Render visual (título + filtros seleccionados integrados)
+    # === Chips dinámicos con mensaje si no hay filtros activos
+    if filtros_activos:
+        chips_html = "<div class='chip-container'>" + "".join(
+            [f"<div class='chip'>{filtro}</div>" for filtro in filtros_activos]
+        ) + "</div>"
+    else:
+        chips_html = """
+    <div class='chip-container'>
+        <div class='chip chip-ninguno'>NINGÚN FILTRO SELECCIONADO</div>
+    </div>
+    """
+
+    # === Render visual (título + chips integrados)
     st.markdown(f"""
     <div class="encabezado-con-filtros">
         <div style="display: flex; flex-direction: column; gap: 0.2rem; margin-bottom: 1.5rem;">
             <span style="font-size: 28px; font-weight: 900; color: black;">Predicción de Retención de Clientes</span>
         </div>
-        {"<div class='chip-container'>" + "".join([f"<div class='chip'>{filtro}</div>" for filtro in filtros_activos]) + "</div>" if filtros_activos else ""}
-    </div>  
+        {chips_html}
+    </div>
     """, unsafe_allow_html=True)
 
-
+    # === KPIs y lógica posterior
     retenidos_proy, total_proy, retencion_proy = calcular_retencion(df_filtrado)
     retenidos_total, total_clientes_total, retencion_total = calcular_retencion(df_proy)
+
 
     retencion_actual_dict = {
         "Todas (0-30 días)": 2.95,
@@ -443,4 +455,3 @@ def vista_prediccion():
 
 </div>
 """, height=760, scrolling=False)
-
