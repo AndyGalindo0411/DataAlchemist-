@@ -1,6 +1,6 @@
-# Data Alchemist
+# Danu Shop by Data Alchemist
 
-Data Alchemist es una aplicación interactiva desarrollada con Streamlit que permite explorar, analizar y predecir datos relacionados con la retención de clientes y la logística en un entorno de comercio electrónico. La aplicación incluye múltiples vistas para facilitar la navegación y el análisis de datos.
+Danu Shop es una aplicación interactiva desarrollada con Streamlit que permite explorar, analizar y predecir datos relacionados con la retención de clientes y la logística en un entorno de comercio electrónico. La aplicación incluye múltiples vistas para facilitar la navegación y el análisis de datos.
 
 ## Estructura del Proyecto
 
