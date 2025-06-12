@@ -81,7 +81,7 @@ def vista_conclusion():
     )
     render_slide_vertical(
         title="Pero los datos no son una sentencia: Son Una Oportunidad.",
-        description="Danu Shop, no solo vende productos, hace una promeda de calidad. La baja retención no es el final de la historia, sino el inicio de un capítulo más brillante para Danu Shop.",
+        description="Danu Shop, no solo vende productos, hace una promesa de calidad. La baja retención no es el final de la historia, sino el inicio de un capítulo más brillante para Danu Shop.",
         image=f"data:image/png;base64,{load_image_base64('Imagenes\Imagen_Conclusion3.png')}",
         title_size="28px"
     )
