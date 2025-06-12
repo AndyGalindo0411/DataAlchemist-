@@ -455,4 +455,3 @@ def vista_prediccion():
 
 </div>
 """, height=760, scrolling=False)
-
